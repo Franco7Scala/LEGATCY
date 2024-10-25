@@ -28,17 +28,31 @@ Build the new heterodata object.
 Args --> I, B (dictionaries in the form node_type: ids_list
 Returns: --> HeteroData object, including nodes, edges, meta-paths, train_mask, val_mask, test_mask.
 """
+#TODO
 def build_new_heterodata(I, B):
     data = HeteroData()
     #.........................
     return data
 
+"""
+Build the list of masks.
+Args --> strategy, data/no. of nodes for each type?
+Returns: --> list of boolean tensors, one for each mask
+"""
+#TODO
 def build_masks(strategy="RS2"):
     return None
 
 
-def extract_heterodata_sub(data, masks, epoch):
-    # .........................
+"""
+Build the new heterodata object.
+Args --> heterodata object, list of masks, single epoch
+Returns: --> heterodata object with a mask applied (based on the epoch)
+"""
+#TODO
+def extract_heterodata_sub(data, masks, epoch, strategy="RS2"):
+    #identify the "correct" mask to be applied (based on the strategy)
+    #apply the mask to data
     return data
 
 
