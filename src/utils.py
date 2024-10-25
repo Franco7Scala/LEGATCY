@@ -17,6 +17,9 @@ class Color(Enum):
     BLACK = 8
 
 
+training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
+
+
 """
 Build the new heterodata object.
 Args --> I, B (dictionaries in the form node_type: ids_list
