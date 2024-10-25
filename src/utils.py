@@ -8,12 +8,12 @@ from enum import Enum
 
 
 class Color(Enum):
-    BLUE = 2
-    GREEN = 3
-    LIGHT_GREEN = 4
-    RED = 5
-    MAGENTA = 6
-    CYAN = 7
+    EXPERIMENT_CONFIG_INFO = 2
+    EXPERIMENT_STATUS_HIGH_PRIORITY = 3
+    EXPERIMENT_STATUS_LOW_PRIORITY = 4
+    EXPERIMENT_OUTPUT = 6
+    WARNING = 5
+    OTHER = 7
     BLACK = 8
 
 
@@ -68,22 +68,22 @@ def processing_results(df):
     return res
 
 def cprint(text, color=Color.BLACK):
-    if color == Color.BLUE:
+    if color == Color.EXPERIMENT_CONFIG_INFO:
         code_color = "\033[94m"
 
-    elif color == Color.GREEN:
+    elif color == Color.EXPERIMENT_STATUS_HIGH_PRIORITY:
         code_color = "\033[32m"
 
-    elif color == Color.LIGHT_GREEN:
+    elif color == Color.EXPERIMENT_STATUS_LOW_PRIORITY:
         code_color = "\033[92m"
 
-    elif color == Color.RED:
+    elif color == Color.WARNING:
         code_color = "\033[91m"
 
-    elif color == Color.MAGENTA:
+    elif color == Color.EXPERIMENT_OUTPUT:
         code_color = "\033[95m"
 
-    elif color == Color.CYAN:
+    elif color == Color.OTHER:
         code_color = "\033[96m"
 
     else:
