@@ -1,7 +1,20 @@
 from torch_geometric.data import HeteroData
 import torch
+import time
 import pandas as pd
 from statistics import stdev
+from enum import Enum
+
+
+class Color(Enum):
+    BLUE = 2
+    GREEN = 3
+    LIGHT_GREEN = 4
+    RED = 5
+    MAGENTA = 6
+    CYAN = 7
+    BLACK = 8
+
 
 """
 Build the new heterodata object.
@@ -53,7 +66,33 @@ def processing_results(df):
         res[col] = lista
     return res
 
+def cprint(text, color=Color.BLACK):
+    if color == Color.BLUE:
+        code_color = "\033[94m"
 
+    elif color == Color.GREEN:
+        code_color = "\033[32m"
+
+    elif color == Color.LIGHT_GREEN:
+        code_color = "\033[92m"
+
+    elif color == Color.RED:
+        code_color = "\033[91m"
+
+    elif color == Color.MAGENTA:
+        code_color = "\033[95m"
+
+    elif color == Color.CYAN:
+        code_color = "\033[96m"
+
+    else:
+        code_color = "\033[0m"
+
+    print(code_color + str(text) + "\033[0m")
+
+
+def get_time_in_millis():
+    return int(round(time.time() * 1000))
 
 
 
