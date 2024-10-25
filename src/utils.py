@@ -33,6 +33,14 @@ def build_new_heterodata(I, B):
     #.........................
     return data
 
+def build_masks(strategy="RS2"):
+    return None
+
+
+def extract_heterodata_sub(data, masks, epoch):
+    # .........................
+    return data
+
 
 """
 Computes weights for a multiclass classification task.

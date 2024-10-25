@@ -1,14 +1,15 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score
+
+from utils import extract_heterodata_sub
 
 
 # Model training
-def train_node_classifier(model, data, optimizer, criterion, n_epochs=200, target_type='author'):
+def train_node_classifier(model, data, masks, optimizer, criterion, n_epochs=200, target_type='author'):
     for epoch in range(1, n_epochs + 1):
         model.train()
         optimizer.zero_grad()
+        data = extract_heterodata_sub(data, masks, epoch)
         out = model(data.x_dict, data.edge_index_dict)
         mask = data[target_type].train_mask
         loss = criterion(out[target_type][mask], data[target_type].y[mask])
@@ -20,17 +21,17 @@ def train_node_classifier(model, data, optimizer, criterion, n_epochs=200, targe
     return model
 
 
-def eval_node_classifier(model, data):
+def eval_node_classifier(model, data, target_type):
     model.eval()
     with torch.no_grad():
         pred = model(data.x_dict, data.edge_index_dict)['author'].argmax(dim=-1)
         pred_prob = torch.nn.functional.softmax(model(data.x_dict, data.edge_index_dict)['author'], -1)
-        mask = data['author'].val_mask
-        correct = (pred[mask] == data['author'].y[mask]).sum()
+        mask = data[target_type].val_mask
+        correct = (pred[mask] == data[target_type].y[mask]).sum()
         #acc = int(correct) / int(mask.sum())
-        f1_micro = f1_score(data['author'].y.cpu(), pred.cpu(), average='micro')
-        f1_macro = f1_score(data['author'].y.cpu(), pred.cpu(), average='macro')
-        f1_weigh = f1_score(data['author'].y.cpu(), pred.cpu(), average='weighted')
+        f1_micro = f1_score(data[target_type].y.cpu(), pred.cpu(), average='micro')
+        f1_macro = f1_score(data[target_type].y.cpu(), pred.cpu(), average='macro')
+        f1_weigh = f1_score(data[target_type].y.cpu(), pred.cpu(), average='weighted')
         #servono predicted probabilities, 8 classes
-        auc = roc_auc_score(data['author'].y.cpu(), pred_prob.cpu().detach().numpy(), average='macro', multi_class='ovo')
+        auc = roc_auc_score(data[target_type].y.cpu(), pred_prob.cpu().detach().numpy(), average='macro', multi_class='ovo')
         return f1_micro, f1_macro, f1_weigh, auc
