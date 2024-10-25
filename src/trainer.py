@@ -1,0 +1,36 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from sklearn.metrics import f1_score, roc_auc_score
+
+
+# Model training
+def train_node_classifier(model, data, optimizer, criterion, n_epochs=200, target_type='author'):
+    for epoch in range(1, n_epochs + 1):
+        model.train()
+        optimizer.zero_grad()
+        out = model(data.x_dict, data.edge_index_dict)
+        mask = data[target_type].train_mask
+        loss = criterion(out[target_type][mask], data[target_type].y[mask])
+        loss.backward()
+        optimizer.step()
+        f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data)
+        if epoch % 20 == 0:
+            print(f'Epoch: {epoch:03d}, Train Loss: {loss:.3f}, Val f1_micro: {f1_micro:.3f}')
+    return model
+
+
+def eval_node_classifier(model, data):
+    model.eval()
+    with torch.no_grad():
+        pred = model(data.x_dict, data.edge_index_dict)['author'].argmax(dim=-1)
+        pred_prob = torch.nn.functional.softmax(model(data.x_dict, data.edge_index_dict)['author'], -1)
+        mask = data['author'].val_mask
+        correct = (pred[mask] == data['author'].y[mask]).sum()
+        #acc = int(correct) / int(mask.sum())
+        f1_micro = f1_score(data['author'].y.cpu(), pred.cpu(), average='micro')
+        f1_macro = f1_score(data['author'].y.cpu(), pred.cpu(), average='macro')
+        f1_weigh = f1_score(data['author'].y.cpu(), pred.cpu(), average='weighted')
+        #servono predicted probabilities, 8 classes
+        auc = roc_auc_score(data['author'].y.cpu(), pred_prob.cpu().detach().numpy(), average='macro', multi_class='ovo')
+        return f1_micro, f1_macro, f1_weigh, auc

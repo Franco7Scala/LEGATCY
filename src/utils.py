@@ -1,8 +1,10 @@
-from torch_geometric.data import HeteroData
 import torch
+import os
 import time
 import numpy
 import pandas as pd
+
+from torch_geometric.data import HeteroData
 from statistics import stdev
 from enum import Enum
 
@@ -19,6 +21,7 @@ class Color(Enum):
 
 training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
 
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 """
 Build the new heterodata object.
