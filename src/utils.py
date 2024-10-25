@@ -1,6 +1,7 @@
 from torch_geometric.data import HeteroData
 import torch
 import time
+import numpy
 import pandas as pd
 from statistics import stdev
 from enum import Enum
@@ -95,6 +96,9 @@ def get_time_in_millis():
     return int(round(time.time() * 1000))
 
 
-
-
-
+def set_random_seed(seed):
+    numpy.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
