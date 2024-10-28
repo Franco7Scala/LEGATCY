@@ -1,0 +1,62 @@
+import os
+import pickle
+import pandas as pd
+import torch
+import torch.nn as nn
+from torch_geometric.nn import Linear, to_hetero
+
+
+from src import utils, trainer
+from src.models.GAT_enhanced import GAT_enhanced
+from src.utils import set_random_seed, get_target_type, processing_results, compute_weights
+from src.data_loader import build_heterodata
+from src.trainer import train_node_classifier, eval_node_classifier
+
+
+dataset_name = "openalex"
+no_snapshot = 1
+data = build_heterodata(dataset_name=dataset_name, no_snapshot=no_snapshot)
+target_type = get_target_type(dataset_name)
+num_classes = len(torch.unique(data[target_type].y))
+output_dir = os.path.join("data", dataset_name, "snapshot_" + str(no_snapshot), "processed_data")
+
+l_micro = []
+l_macro = []
+l_weigh = []
+l_auc = []
+for run in range(len(utils.training_seeds)):
+    print(f"Performing run n {run} on {len(utils.training_seeds)}...")
+    set_random_seed(utils.training_seeds[run])
+
+    model = GAT_enhanced(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
+    model = to_hetero(model, data.metadata(), aggr="sum")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data, model = data.to(device), model.to(device)
+
+    #TRAIN THE MODEL
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
+    weights = compute_weights(data[target_type].y).float().to(device) #torch.tensor([1.5, 1.5, 1, 1, 1, 1, 1.5, 1]).float().to(device)
+    criterion = nn.CrossEntropyLoss(weights)
+    model = train_node_classifier(model, data, optimizer, criterion, target_type, run, directory=output_dir, n_epochs=500)
+    torch.save(model.state_dict(), os.path.join(output_dir, "model_"+str(run)+".pth"))
+
+
+    f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data, target_type, run, directory=output_dir)
+    #print(f"Test Eval: {test_ev:.3f}")
+    print(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, f1-weighted: {f1_weigh:.3f}, roc-auc: {auc:.3f}")
+
+    l_micro.append(f1_micro)
+    l_macro.append(f1_macro)
+    l_weigh.append(f1_weigh)
+    l_auc.append(auc)
+
+df = pd.DataFrame(columns=["F1_micro", "F1_macro", "F1_weighted", "ROC-AUC"])
+df["F1_micro"] = l_micro
+df["F1_macro"] = l_macro
+df["F1_weighted"] = l_weigh
+df["ROC-AUC"] = l_auc
+df_ok = processing_results(df)
+df_ok.to_excel(os.path.join(output_dir, "results.xlsx"), index=False)
+
+
+

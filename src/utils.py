@@ -1,8 +1,11 @@
+from sys import meta_path
+
 import torch
 import os
 import time
 import numpy
 import pandas as pd
+import pickle
 
 from torch_geometric.data import HeteroData
 from statistics import stdev
@@ -22,6 +25,45 @@ class Color(Enum):
 training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
+
+def open_pickle(pckl_file):
+    file = open(pckl_file, 'rb')
+    return pickle.load(file)
+
+
+def get_target_type(dataset_name):
+    heterodata_dir = os.path.join('data', dataset_name, 'snapshot_0', 'heterodata')
+    fname_labels = next((f for f in os.listdir(heterodata_dir) if f.endswith(".pt")), None)
+    return fname_labels.split('_')[0] #xxx_labels.pt
+
+
+def get_metapaths(dataset_name):
+    if dataset_name == "openalex":
+        metapaths = [[('author', 'paper'), ('paper', 'author')], #APA
+             [('author', 'paper'), ('paper', 'is_cited_by', 'paper'), ('paper', 'author')], #APPA
+             [('author', 'institution'), ('institution', 'author')]] #AIA
+    elif dataset_name == "mumin":
+        metapaths = [[('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'is_posted_by', 'user'),
+                      ('user', 'posted', 'tweet'),
+                      ('tweet', 'discusses', 'claim')],  # CTUTC
+                     [('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'has_hashtag', 'hashtag'),
+                      ('hashtag', 'is_hashtag_of', 'tweet'),
+                      ('tweet', 'discusses', 'claim')],  # CTHTC
+                     [('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'is_replied_by', 'reply'),
+                      ('reply', 'reply_to', 'tweet'),
+                      ('tweet', 'discusses', 'claim')],  # CTRTC_r
+                     [('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'is_quoted_by', 'reply'),
+                      ('reply', 'quote_of', 'tweet'),
+                      ('tweet', 'discusses', 'claim')]]  # CTRTC_q
+    else:
+        raise ValueError(f"No dataset with name '{dataset_name}'")
+    return metapaths
+
 
 """
 Args --> dataset name (str) + dataset (HetrodataObject)
@@ -46,6 +88,8 @@ def nodes_info(dataset_name, data):
     else:
         raise ValueError(f"No dataset with name '{dataset_name}'")
     return target_type, d
+
+
 
 
 
