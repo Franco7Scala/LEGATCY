@@ -8,7 +8,8 @@ from torch_geometric.nn import Linear, to_hetero
 
 from src import utils, trainer
 from src.models.GAT_enhanced import GAT_enhanced
-from src.utils import set_random_seed, get_target_type, processing_results, compute_weights
+from src.utils import set_random_seed, processing_results, compute_weights
+from src.data_utils import get_target_type
 from src.data_loader import build_heterodata
 from src.trainer import train_node_classifier, eval_node_classifier
 

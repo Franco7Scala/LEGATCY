@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from sklearn.metrics import f1_score, roc_auc_score
 
-from src.utils import extract_heterodata_sub
+from src.data_utils import extract_heterodata_sub
 
 
 # Model training

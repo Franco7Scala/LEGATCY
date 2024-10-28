@@ -8,7 +8,7 @@ import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.transforms import AddMetaPaths
 
-from src.utils import open_pickle, get_target_type, get_metapaths
+from src.data_utils import open_pickle, get_target_type, get_metapaths
 
 
 
