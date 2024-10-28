@@ -1,15 +1,16 @@
 import torch
 from sklearn.metrics import f1_score, roc_auc_score
 
-from utils import extract_heterodata_sub
+from src.utils import extract_heterodata_sub
 
 
 # Model training
-def train_node_classifier(model, data, masks, optimizer, criterion, n_epochs=200, target_type='author'):
+def train_node_classifier(model, data, optimizer, criterion, n_epochs=200, target_type='author'):
     for epoch in range(1, n_epochs + 1):
         model.train()
         optimizer.zero_grad()
-        data = extract_heterodata_sub(data, masks, epoch)
+        mask = None #TODO build_mask(strategy)
+        data = extract_heterodata_sub(data, mask)
         out = model(data.x_dict, data.edge_index_dict)
         mask = data[target_type].train_mask
         loss = criterion(out[target_type][mask], data[target_type].y[mask])

@@ -4,27 +4,26 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch_geometric.nn import Linear, to_hetero
-from torch_geometric.explain import Explainer, CaptumExplainer
+
 
 from src import utils, trainer
-from src.utils import build_masks
-from utils import set_random_seed, processing_results, compute_weights, build_new_heterodata
-from trainer import train_node_classifier, eval_node_classifier
+from src.models.GAT_enhanced import GAT_enhanced
+from src.utils import set_random_seed, nodes_info, processing_results, compute_weights
+from src.trainer import train_node_classifier, eval_node_classifier
+
+
+dataset_name = "openalex"
+data = None #TODO data_loader(dataset_name)
+nodes_info = nodes_info(dataset_name=dataset_name, data=data)
+target_type, nodes_info_dict = nodes_info[0], nodes_info[1]
+num_classes = len(torch.unique(data[target_type].y))
 
 
 path_technique = "DyHANE/"
 base = "2019-2021/" #"2019-2022/"
 new = "2022/"
-target_type = "author"
-num_classes = 8
 
-#Build new tran-val-test set as I U B.
-#I per me è la nuova conoscenza (da "Influenced node set"). Sono i nodi in qualche modo affected dal cambiamento (i nuovi + quelli cui si attaccano + eventualm. qualcos"altro)
-#B è la vecchia conoscenza fissata (da "memory Buffer"). Sono i nodi che al timestamp precedente sono ritenuti rilevanti e memorizzati.
-#Al tempo t=0, I=V e B è vuoto
-new_knowledge = pickle.load(open(os.path.join(path_technique, new, "I.pkl"), "rb"))
-previous_knowledge = pickle.load(open(os.path.join(path_technique, base, "B.pkl"), "rb"))
-data = build_new_heterodata(new_knowledge, previous_knowledge) #data ha già train_mask, val_mask, test_mask
+
 
 
 l_micro = []
@@ -35,19 +34,17 @@ for run in range(len(utils.training_seeds)):
     print(f"Performing run n {run} on {len(utils.training_seeds)}...")
     set_random_seed(utils.training_seeds[run])
 
-    model = None
-    model = GAT(hidden_channels=64, out_channels=num_classes, dropout=0.4)
+    model = GAT_enhanced(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
     model = to_hetero(model, data.metadata(), aggr="sum")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data, model = data.to(device), model.to(device)
-    masks = build_masks(strategy="RS2")
 
     #TRAIN THE MODEL
     optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
     weights = compute_weights(data[target_type].y).float().to(device) #torch.tensor([1.5, 1.5, 1, 1, 1, 1, 1.5, 1]).float().to(device)
     criterion = nn.CrossEntropyLoss(weights)
-    model = train_node_classifier(model, data, masks, optimizer, criterion, n_epochs=500, target_type)
-    torch.save(model.state_dict(), path_technique + base + "base_model.pth")
+    model = train_node_classifier(model, data, optimizer, criterion, n_epochs=500, target_type=target_type)
+    torch.save(model.state_dict(), os.path.join(path_technique, base, "base_model.pth"))
 
     ### alternative to train: LOAD SAVED MODEL
     #model = load_model(64,8,0.4,data, os.path.join(fname_base,base, "model.pth"))

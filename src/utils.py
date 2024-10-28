@@ -24,36 +24,70 @@ training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 """
-Build the new heterodata object.
-Args --> I, B (dictionaries in the form node_type: ids_list
-Returns: --> HeteroData object, including nodes, edges, meta-paths, train_mask, val_mask, test_mask.
+Args --> dataset name (str) + dataset (HetrodataObject)
+Returns: --> Target node type (str) + dict (node_type: num_nodes)
 """
-#TODO
-def build_new_heterodata(I, B):
-    data = HeteroData()
-    #.........................
-    return data
+def nodes_info(dataset_name, data):
+    d = {}
+    if dataset_name == "openalex":
+        target_type = 'author'
+        d['author'] = data['author'].shape[0]
+        d['paper'] = data['paper'].shape[0]
+        d['institution'] = data['institution'].shape[0]
+    elif dataset_name == "mumin":
+        target_type = 'claim'
+        d['claim'] = data['claim'].shape[0]
+        d['tweet'] = data['tweet'].shape[0]
+        d['reply'] = data['reply'].shape[0]
+        d['user'] = data['user'].shape[0]
+        d['hashtag'] = data['hashtag'].shape[0]
+        d['article'] = data['article'].shape[0]
+        d['image'] = data['image'].shape[0]
+    else:
+        raise ValueError(f"No dataset with name '{dataset_name}'")
+    return target_type, d
+
+
 
 """
-Build the list of masks.
-Args --> strategy, data/no. of nodes for each type?
-Returns: --> list of boolean tensors, one for each mask
+Extract a subset of the heterodata object based on a provided mask on nodes ids.
+Args --> data (Heterodata): Full dataset; mask (dict): dictionary in the form node_type: bool tensor
+Returns: --> Heterodata: New heterodata object
 """
-#TODO
-def build_masks(strategy="RS2"):
-    return None
+def extract_heterodata_sub(data, mask):
+    data_sub = HeteroData()
+
+    # Filter nodes according to the provided mask
+    for node_type, mask in mask.items():
+        # Apply the mask to the nodes of this type
+        data_sub[node_type].x = data[node_type].x[mask]
+        # Map old indices to new ones for edge filtering
+        index_map = torch.full((data[node_type].num_nodes,), -1, dtype=torch.long)
+        index_map[mask] = torch.arange(mask.sum().item())
+        # Store the index mapping in the filtered data
+        data_sub[node_type].index_map = index_map
+
+        # Filter edges based on the filtered nodes
+        for edge_type, edge_index in data.edge_index_dict.items():
+            # Split edge_type into (source_type, relation, target_type)
+            src_type, _, tgt_type = edge_type
+            # Apply the index map to filter edges based on valid source and target nodes
+            src_nodes = data_sub[src_type].index_map
+            tgt_nodes = data_sub[tgt_type].index_map
+            # Filter edges where both nodes exist in the subset
+            src_mask = src_nodes[edge_index[0]] != -1
+            tgt_mask = tgt_nodes[edge_index[1]] != -1
+            valid_edges = src_mask & tgt_mask
+            # Apply the mask to the edge index
+            filtered_edge_index = edge_index[:, valid_edges]
+            filtered_edge_index[0] = src_nodes[filtered_edge_index[0]]
+            filtered_edge_index[1] = tgt_nodes[filtered_edge_index[1]]
+            # Store the filtered edges in the new data object
+            data_sub[edge_type].edge_index = filtered_edge_index
+
+    return data_sub
 
 
-"""
-Build the new heterodata object.
-Args --> heterodata object, list of masks, single epoch
-Returns: --> heterodata object with a mask applied (based on the epoch)
-"""
-#TODO
-def extract_heterodata_sub(data, masks, epoch, strategy="RS2"):
-    #identify the "correct" mask to be applied (based on the strategy)
-    #apply the mask to data
-    return data
 
 
 """
