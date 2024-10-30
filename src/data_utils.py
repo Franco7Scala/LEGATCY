@@ -56,7 +56,7 @@ def extract_heterodata_sub(data, mask):
     for node_type, mask in mask.items():
         # Apply the mask to the nodes of this type
         data_sub[node_type].x = data[node_type].x[mask]
-        # Map old indices to new ones for edge filtering
+        # Map raw indices to new ones for edge filtering
         index_map = torch.full((data[node_type].num_nodes,), -1, dtype=torch.long)
         index_map[mask] = torch.arange(mask.sum().item())
         # Store the index mapping in the filtered data

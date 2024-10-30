@@ -1,5 +1,5 @@
 """
-from: data > dataset_name > snapshot_i > heterodata (features, edgelists, mapping, old.pkl, new.pkl)
+from: data > dataset_name > snapshot_i > heterodata (features, edgelists, mapping, raw.pkl, new.pkl)
 to: heterodata object + mask_old, mask_new
 """
 
