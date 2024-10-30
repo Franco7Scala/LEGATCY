@@ -99,20 +99,52 @@ for i,year in enumerate(years):
 """
 
 # AUTHORS
+"""
 authors_metadata = pd.read_csv(os.path.join(or_dir, 'authors_metadata.csv'))
 print(f"authors metadata {authors_metadata.shape}")
-print(authors_metadata.head(5))
 
-"""
 for i,year in enumerate(years):
     print(year)
     AP = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_writes_paper.csv'))
     A_year = AP['src'].drop_duplicates().tolist()
+    authors_metadata_sub = authors_metadata[authors_metadata['id'].isin(A_year)]
+    print(f"authors metadata {authors_metadata_sub.shape}")
+    authors_metadata_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/authors.csv'), index=False)
 """
 
 #AI
+"""
+AI = pd.read_csv(os.path.join(or_dir, 'AI.csv')) #author_id, institution_id
+print(f"authors institutions {AI.shape}")
+
+for i,year in enumerate(years):
+    print(year)
+    authors = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/nodes/authors.csv'))
+    A_year = authors['id'].drop_duplicates().tolist()
+    AI_sub = AI[AI['author_id'].isin(A_year)]
+    print(f"AI {AI_sub.shape}")
+
+    author_is_affiliated_with_institution = AI_sub.copy()
+    author_is_affiliated_with_institution.rename(columns={'author_id': 'src', 'institution_id': 'tgt'}, inplace=True)
+    author_is_affiliated_with_institution.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/author_is_affiliated_with_institution.csv'), index=False)
+
+    institution_is_affiliation_of_author = AI_sub[['institution_id', 'author_id']].copy()
+    institution_is_affiliation_of_author.rename(columns={'institution_id': 'src', 'author_id': 'tgt'}, inplace=True)
+    institution_is_affiliation_of_author.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/institution_is_affiliation_of_author.csv'), index=False)
+"""
 
 #INSTITUTIONS
+institutions = pd.read_csv(os.path.join(or_dir, 'institutions.csv'))
+print(f"institutions {institutions.shape}")
+
+for i,year in enumerate(years):
+    print(year)
+    AI = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_is_affiliated_with_institution.csv'))
+    I_year = AI['tgt'].drop_duplicates().tolist()
+    institutions_sub = institutions[institutions['id'].isin(I_year)]
+    print(f"institutions {institutions_sub.shape}")
+    institutions_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/institutions.csv'), index=False)
+
 
 
 
