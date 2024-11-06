@@ -7,7 +7,7 @@ from src.data_utils import extract_heterodata_sub
 
 
 # Model training
-def train_node_classifier(model, data, optimizer, criterion, target_type, run, directory, n_epochs=200):
+def train_node_classifier(model, data, K_new, K_old, optimizer, criterion, target_type, run, strategy, directory, n_epochs=200):
     for epoch in range(1, n_epochs + 1):
         model.train()
         optimizer.zero_grad()

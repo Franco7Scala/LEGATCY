@@ -9,16 +9,19 @@ from torch_geometric.nn import Linear, to_hetero
 from src import utils, trainer
 from src.models.GAT_enhanced import GAT_enhanced
 from src.utils import set_random_seed, processing_results, compute_weights
-from src.data_utils import get_target_type
+from src.data_utils import get_target_type, open_pickle
 from src.data_loader import build_heterodata
 from src.trainer import train_node_classifier, eval_node_classifier
 
 
 dataset_name = "openalex"
-no_snapshot = 1
+no_snapshot = 1 #current snapshot
 data = build_heterodata(dataset_name=dataset_name, no_snapshot=no_snapshot)
+K_new = open_pickle(os.path.join('data', dataset_name, f'snapshot_{no_snapshot}', 'heterodata/K_new.pkl'))
+K_old = open_pickle(os.path.join('data', dataset_name, f'snapshot_{no_snapshot}', 'heterodata/K_old.pkl'))
 target_type = get_target_type(dataset_name)
 num_classes = len(torch.unique(data[target_type].y))
+strategy = "RS2"
 output_dir = os.path.join("data", dataset_name, "snapshot_" + str(no_snapshot), "processed_data")
 
 l_micro = []
@@ -38,7 +41,7 @@ for run in range(len(utils.training_seeds)):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
     weights = compute_weights(data[target_type].y).float().to(device) #torch.tensor([1.5, 1.5, 1, 1, 1, 1, 1.5, 1]).float().to(device)
     criterion = nn.CrossEntropyLoss(weights)
-    model = train_node_classifier(model, data, optimizer, criterion, target_type, run, directory=output_dir, n_epochs=500)
+    model = train_node_classifier(model, data, K_new, K_old, optimizer, criterion, target_type, run, strategy, directory=output_dir, n_epochs=500)
     torch.save(model.state_dict(), os.path.join(output_dir, "model_"+str(run)+".pth"))
 
 
