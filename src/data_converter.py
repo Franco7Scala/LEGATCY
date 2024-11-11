@@ -36,7 +36,7 @@ def extract_knowledge(dataset_name, no_snapshot):
             K_new_nodes[n_type] = mapping[n_type].values()
             K_old_nodes[n_type] = {}
 
-            X = attributes_encoding(df=df)
+            X = attributes_encoding(df, dataset_name, n_type[:-1])
             torch.save(X, os.path.join(heterodata_dir, 'features', n_type+'.pt' ))
 
     else:
