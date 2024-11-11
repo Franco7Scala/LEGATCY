@@ -44,10 +44,12 @@ def build_heterodata(dataset_name, no_snapshot):
 def get_knowledge(dataset_name, no_snapshot, new=True):
     heterodata_dir = os.path.join('data', dataset_name, 'snapshot_'+str(no_snapshot), 'heterodata')
     if new:
-        pickle_name = 'K_new.pkl'
+        pickle_name_nodes = 'K_new_nodes.pkl'
+        pickle_name_edges = 'K_new_edges.pkl'
     else:
-        pickle_name = 'K_old.pkl'
-    return open_pickle(os.path.join(heterodata_dir, pickle_name))
+        pickle_name_nodes = 'K_old_nodes.pkl'
+        pickle_name_edges = 'K_old_edges.pkl'
+    return open_pickle(os.path.join(heterodata_dir, pickle_name_nodes)), open_pickle(os.path.join(heterodata_dir, pickle_name_edges))
 
 
 

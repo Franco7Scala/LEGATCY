@@ -13,13 +13,18 @@ import os
 import pandas as pd
 import torch
 
-from src.data_utils import open_pickle, save_dict_to_pickle, extract_edge_info, attributes_encoding, edges_encoding
+from src.data_utils import open_pickle, save_dict_to_pickle, get_target_type, extract_edge_info, attributes_encoding, edges_encoding
+from src.main import target_type
 
 
 def extract_knowledge(dataset_name, no_snapshot):
     original_dir = os.path.join('data', dataset_name, 'snapshot_'+str(no_snapshot), 'original_data')
     heterodata_dir = os.path.join('data', dataset_name, 'snapshot_'+str(no_snapshot), 'heterodata')
     heterodata_prev_dir = os.path.join('data', dataset_name, f'snapshot_{(no_snapshot-1)}', 'heterodata')
+
+    mapping_labels = open_pickle(os.path.join('data', dataset_name, 'mapping_labels.pkl'))
+    target_type = get_target_type(dataset_name)
+    Y_df = pd.read_csv(os.path.join(original_dir, target_type + '_labels.csv'))
 
     # processing nodes + mapping
     K_new_nodes = {}
@@ -38,6 +43,12 @@ def extract_knowledge(dataset_name, no_snapshot):
 
             X = attributes_encoding(df, dataset_name, n_type[:-1])
             torch.save(X, os.path.join(heterodata_dir, 'features', n_type+'.pt' ))
+
+        # mapping labels
+        #Y['id'] = Y['id'].map(mapping[target_type + 's']) in questo caso non serve
+        Y_df['label'] = Y_df['label'].map(mapping_labels)
+        Y = torch.tensor(Y_df['label'].values)
+        torch.save(Y, os.path.join(heterodata_dir, target_type + '_labels.pt'))
 
     else:
         mapping = open_pickle(os.path.join(heterodata_prev_dir, 'mapping.pkl'))
@@ -68,10 +79,24 @@ def extract_knowledge(dataset_name, no_snapshot):
                     X[id] = X_prev[map_n_type[id_str]]
             torch.save(X, os.path.join(heterodata_dir, 'features', n_type + '.pt'))
 
+        # mapping labels
+        Y_df['id'] = Y_df['id'].map(mapping[target_type + 's'])
+        Y_df['label'] = Y_df['label'].map(mapping_labels)
+        Y_prev = torch.load(os.path.join(heterodata_prev_dir, target_type + '_labels.pt'))
+        Y_prev_df = pd.DataFrame({"label": Y_prev.tolist()})
+        Y_prev_df.reset_index(inplace=True) # Reset the index in Y_prev to simulate the "id" column (0, 1, 2, ...)
+        Y_prev_df.columns = ["id", "label"]
+        Y_tot = pd.concat([Y_df, Y_prev_df[~Y_prev_df["id"].isin(Y_df["id"])]]) # Remove entries from Y_prev_df if the 'id' already exists in Y_df
+        Y_tot = Y_tot.reset_index(drop=True).reset_index() # Reset index to make "id" a sequential integer starting from 0
+        Y_tot = Y_tot.rename(columns={"index": "id"})
+        Y = torch.tensor(Y_tot["label"].values)
+        torch.save(Y, os.path.join(heterodata_dir, target_type + '_labels.pt'))
+
     # saving mapping, K_new_nodes, K_old_nodes
     save_dict_to_pickle(mapping, os.path.join(heterodata_dir, 'mapping.pkl'))
     save_dict_to_pickle(K_new_nodes, os.path.join(heterodata_dir, 'K_new_nodes.pkl'))
     save_dict_to_pickle(K_old_nodes, os.path.join(heterodata_dir, 'K_old_nodes.pkl'))
+
 
     # processing edges
     K_new_edges = {}
@@ -105,3 +130,4 @@ def extract_knowledge(dataset_name, no_snapshot):
     # saving K_new_edges, K_old_edges
     save_dict_to_pickle(K_new_edges, os.path.join(heterodata_dir, 'K_new_edges.pkl'))
     save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
+

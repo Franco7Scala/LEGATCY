@@ -7,11 +7,11 @@ from src.data_utils import extract_heterodata_sub
 
 
 # Model training
-def train_node_classifier(model, data, K_new, K_old, optimizer, criterion, target_type, run, strategy, directory, n_epochs=200):
+def train_node_classifier(model, data, K_new_nodes, K_new_edges, K_old_nodes, K_old_edges, optimizer, criterion, target_type, run, strategy, directory, n_epochs=200):
     for epoch in range(1, n_epochs + 1):
         model.train()
         optimizer.zero_grad()
-        mask_strategy = None #TODO build_mask(strategy)
+        mask_strategy = None #TODO build_mask(strategy, epoch, K_new_nodes, K_new_edges, K_old_nodes, K_old_edges)
         data = extract_heterodata_sub(data, mask_strategy)
         out, _ = model(data.x_dict, data.edge_index_dict)
         mask = data[target_type].train_mask

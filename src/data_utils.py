@@ -25,6 +25,13 @@ def save_dict_to_pickle(data_dict, pckl_file):
 def get_target_type(dataset_name):
     heterodata_dir = os.path.join('data', dataset_name, 'snapshot_0', 'heterodata')
     fname_labels = next((f for f in os.listdir(heterodata_dir) if f.endswith(".pt")), None)
+    if fname_labels is None:
+        if dataset_name == "openalex":
+            return "author"
+        elif dataset_name == "mumin":
+            return "claim"
+        else:
+            raise ValueError(f"No dataset with name '{dataset_name}'")
     return fname_labels.split('_')[0] #xxx_labels.pt
 
 def extract_edge_info(fname):
@@ -231,6 +238,28 @@ def one_hot_encoding(df, col):
     df[col + '_ohe'] = df.apply(lambda x: one_hot_encode(x[col]), axis=1)
     df.drop([col], axis=1, inplace=True)
     return df
+
+
+def one_hot_encoding_list(df, col, values):
+    df[col] = df[col].astype(str) #Ensure the target column is in string format
+    num_values = len(values)
+    values_dict = {val: idx for idx, val in enumerate(values)}
+
+    def one_hot_encode(lista):
+        one_hot_vector = np.zeros(num_values, dtype=int) # Initialize a zero vector for the number of concepts
+        # Set the index of each present concept to 1
+        for elem in eval(lista):
+            elem_lower = elem.lower()
+            if elem_lower in values_dict:
+                one_hot_vector[values_dict[elem_lower]] = 1
+        return torch.tensor(one_hot_vector, dtype=torch.int32)
+
+    # Apply the one-hot encoding function to each row and create a new column
+    df[col + '_ohe'] = df.apply(lambda x: one_hot_encode(x[col]), axis=1)
+    df.drop([col], axis=1, inplace=True)
+    return df
+
+
 
 
 

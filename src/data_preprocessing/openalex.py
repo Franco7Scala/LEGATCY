@@ -4,9 +4,10 @@ to: data > dataset_name > snapshot_i > original_data (nodes, edges)
 """
 import os
 import pandas as pd
-import torch
+import json
+import pickle
 
-from ..data_utils import scale_numeric, encoding_short_text, encoding_long_text, one_hot_encoding
+from ..data_utils import scale_numeric, encoding_short_text, encoding_long_text, one_hot_encoding, one_hot_encoding_list, save_dict_to_pickle
 
 
 dataset_name = "openalex"
@@ -168,17 +169,106 @@ def encoding_attributes(df, n_type):
         return df_ok
 
     elif n_type == "paper":
-        df_ok = df[['name', 'country-code', 'type']].copy()
+        df_ok = df[['name', 'country-code', 'type', 'filtered_concepts']].copy()
         for col in df.columns:
             if col == 'title':
                 df_ok = encoding_short_text(df_ok, col, target_dim=128)
             elif col == "abstract":
                 df_ok = encoding_long_text(df_ok, col)
-            else: #num_citations
+            elif col == 'filtered_concepts':
+                col = "concepts"
+                df_ok.rename(columns={'filtered_concepts': col}, inplace=True)
+                df_ok = one_hot_encoding_list(df, col, get_sub_concepts_list())
+            else: #'num_citations:
                 df_ok = scale_numeric(df_ok, col)
         return df_ok
 
     else:
         raise ValueError(f"Unsupported node type: {n_type}")
 
+
+def get_sub_concepts_list():
+    return ["multimedia", "database", "internet privacy", "natural language processing", "data science",
+                    "artificial intelligence", "distributed computing", "computer hardware",
+                    "theoretical computer science", "library science", "operating system", "world wide web",
+                    "parallel computing", "information retrieval", "computer security", "knowledge management",
+                    "computer vision", "data mining", "speech recognition", "programming language",
+                    "computer network", "machine learning"] #"computer architecture", "real time computing", "computer graphics images", "human computer interaction",
+
+
+
+def labels_generation():
+    main_concept = "Computer science"
+    sub_concepts = ["multimedia", "database", "internet privacy", "natural language processing", "data science",
+                    "artificial intelligence", "real time computing", "distributed computing", "computer hardware",
+                    "theoretical computer science", "computer architecture", "computer graphics images",
+                    "library science", "operating system", "world wide web", "parallel computing",
+                    "information retrieval", "computer security", "knowledge management", "computer vision",
+                    "data mining", "speech recognition", "programming language", "human computer interaction",
+                    "computer network", "machine learning"]
+    for i in range(7):
+        authors = []
+        labels = []
+        filename = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/authors.csv')
+        df = pd.read_csv(filename, usecols=["id", "x_concepts"])
+        sub_concepts.append("generic") # no level 1
+        for _, row in df.iterrows():
+            concepts = json.loads(
+                row["x_concepts"].replace("': '", "\": \"").replace("', '", "\", \"").replace("{'", "{\"").replace("'}","\"}").replace("': ", "\": ").replace(", '", ", \"")
+            )
+            #if contains_main_concept(main_concept, concepts): ###ok always True
+            max_score = -1
+            max_value = "generic"
+            for concept in concepts:
+                if concept["display_name"].lower() in sub_concepts:
+                    if concept["score"] > max_score:
+                        max_score = concept["score"]
+                        max_value = concept["display_name"].lower()
+
+            authors.append(row["id"])
+            labels.append(max_value)
+
+        df_new = pd.DataFrame({'id': authors, 'label': labels})
+        df_new.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/author_labels.csv'), index=False)
+
+
+def create_mapping_labels():
+    sub_concepts_ok = ["multimedia", "database", "internet privacy", "natural language processing", "data science",
+                    "artificial intelligence", "distributed computing", "computer hardware",
+                    "theoretical computer science", "library science", "operating system", "world wide web",
+                    "parallel computing", "information retrieval", "computer security", "knowledge management",
+                    "computer vision", "data mining", "speech recognition", "programming language",
+                    "computer network", "machine learning"] #"computer architecture", "real time computing", "computer graphics images", "human computer interaction",
+    labels_dict = {label: index for index, label in enumerate(sub_concepts_ok)}
+    with open("/mnt/nas/martirano/openalex/mapping_labels.pkl", "wb") as f:
+        pickle.dump(labels_dict, f)
+
+
+def processing_paper_concepts():
+    for i in range(7):
+        filename = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv')
+        df = pd.read_csv(filename)
+        df['filtered_concepts'] = df['concepts'].apply(filter_concepts)
+        df.to_csv(
+            os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv'),
+            index=False)
+
+
+
+def filter_concepts(concepts):
+    # Extract the names of the concepts from each tuple, convert them to lowercase,
+    # and keep only those that are in sub_concepts_ok_set
+    sub_concepts_ok = ["multimedia", "database", "internet privacy", "natural language processing", "data science",
+                       "artificial intelligence", "distributed computing", "computer hardware",
+                       "theoretical computer science", "library science", "operating system", "world wide web",
+                       "parallel computing", "information retrieval", "computer security", "knowledge management",
+                       "computer vision", "data mining", "speech recognition", "programming language",
+                       "computer network", "machine learning"]
+    filtered = [concept[1].lower() for concept in eval(concepts) if concept[1].lower() in sub_concepts_ok]
+    return filtered
+
+
+#labels_generation()
+#create_mapping_labels()
+processing_paper_concepts()
 
