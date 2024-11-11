@@ -63,16 +63,12 @@ def get_metapaths(dataset_name):
         raise ValueError(f"No dataset with name '{dataset_name}'")
     return metapaths
 
-#get the mapped id
-#mapping (for a specific node_type) is in the form: openalex_id --> index
-def find_mapping(id, mapping):
-    max_id = max(mapping.values())
-    index = mapping[id] if id in mapping else max_id+1
-    mapping[id] = index #true update only if index > max_id
-    return index
+
+def edges_encoding(df):
+    return torch.tensor(df.values.T)
 
 
-def encoding_attributes(df):
+def attributes_encoding(df):
     tensors = []
     for col in df.columns:
         print('##### Processing column ', col, ' #####')
@@ -119,7 +115,7 @@ def convert_datetime_to_timestamp(df, col):
 
 # encoding of short texts
 # boost: apply PCA after SBERT on the individual attribute. Apply the mean to nan values
-def encoding_short_text(df, col, target_dim=28):
+def encoding_short_text(df, col, target_dim=64):
     model = SentenceTransformer("all-MiniLM-L6-v2")
     # df[col+'_encoded'] = df.apply(lambda x: model.encode(x[col]), axis=1)
 
