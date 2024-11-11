@@ -4,150 +4,181 @@ to: data > dataset_name > snapshot_i > original_data (nodes, edges)
 """
 import os
 import pandas as pd
+import torch
+
+from ..data_utils import scale_numeric, encoding_short_text, encoding_long_text, one_hot_encoding
 
 
 dataset_name = "openalex"
 or_dir = '/mnt/nas/martirano/openalex/raw/original_data'
 
-# PAPERS
-"""
-papers = pd.read_csv(os.path.join(or_dir, 'papers.csv'))
-papers_abs = pd.read_csv(os.path.join(or_dir, 'paper_abstracts.csv'), delimiter=';') #id, abstract
-papers_con = pd.read_csv(os.path.join(or_dir, 'paper_concepts.csv')) ##paper_id, concept_id, concept_name, level
-papers_con.rename(columns={'paper_id': 'id'}, inplace=True)
-papers_con_ok = papers_con.groupby('id').apply(lambda x: list(zip(x['concept_id'], x['concept_name'], x['level']))).reset_index(name='concepts')
 
-years = sorted(papers['publication_year'].drop_duplicates().tolist())
-years = years[:-1]
+def split_original_data(or_dir):
 
-for i,year in enumerate(years):
-    print(year)
+    # PAPERS
+    papers = pd.read_csv(os.path.join(or_dir, 'papers.csv'))
+    papers_abs = pd.read_csv(os.path.join(or_dir, 'paper_abstracts.csv'), delimiter=';') #id, abstract
+    papers_con = pd.read_csv(os.path.join(or_dir, 'paper_concepts.csv')) ##paper_id, concept_id, concept_name, level
+    papers_con.rename(columns={'paper_id': 'id'}, inplace=True)
+    papers_con_ok = papers_con.groupby('id').apply(lambda x: list(zip(x['concept_id'], x['concept_name'], x['level']))).reset_index(name='concepts')
 
-    #create directory structure
-    full_path_nodes = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes')
-    os.makedirs(full_path_nodes, exist_ok=True)
-    full_path_edges = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges')
-    os.makedirs(full_path_edges, exist_ok=True)
+    years = sorted(papers['publication_year'].drop_duplicates().tolist())
+    years = years[:-1]
 
-    papers_sub = papers.loc[papers['publication_year'] == year]
-    papers_sub = papers_sub.sort_values(by='id', ascending=True).reset_index()
-    papers_sub.drop(columns='index', inplace=True)
-    papers_ok = papers_sub.id.tolist()
-    print(f"Papers ok: {papers_sub.shape}")
-    papers_abs_sub = papers_abs[papers_abs['id'].isin(papers_ok)]
-    print(f"Paper-abstracts {papers_abs_sub.shape}")
-    papers_con_sub = papers_con_ok[papers_con_ok['id'].isin(papers_ok)]
-    print(f"Paper-concepts {papers_con_sub.shape}")
-    papers_meta_sub = papers_abs_sub.merge(papers_con_sub, on='id', how='left')
-    papers_meta_sub = papers_meta_sub.sort_values(by='id', ascending=True).reset_index()
-    papers_meta_sub.drop(columns='index', inplace=True)
-    papers_meta_sub.rename(columns={'id': 'id2'}, inplace=True)
-    print(f"Paper-metadata {papers_meta_sub.shape}")
-    #dfP = papers_sub.merge(papers_meta_sub, on='id')
-    dfP = pd.concat([papers_sub, papers_meta_sub], axis=1)
-    #mismatched_count = len(dfP[dfP['id'] != dfP['id2']])
-    #print(f"Mismatched papers: {mismatched_count}")
-    dfP.drop(columns='id2', inplace=True)
-    print(f"Paper-all {dfP.shape}")
-    dfP.to_csv(os.path.join(full_path_nodes, 'papers.csv'), index=False)
-"""
+    for i,year in enumerate(years):
+        print(year)
 
-# PP
-PP = pd.read_csv(os.path.join(or_dir, 'PP.csv')) #citing, cited, year
-years = sorted(PP['year'].drop_duplicates().tolist())
-years = years[:-1]
+        #create directory structure
+        full_path_nodes = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes')
+        os.makedirs(full_path_nodes, exist_ok=True)
+        full_path_edges = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges')
+        os.makedirs(full_path_edges, exist_ok=True)
 
-"""
-for i,year in enumerate(years):
-    print(year)
-    PP_sub = PP.loc[PP['year'] == year]
-    print(f"PP {PP_sub.shape}")
+        papers_sub = papers.loc[papers['publication_year'] == year]
+        papers_sub = papers_sub.sort_values(by='id', ascending=True).reset_index()
+        papers_sub.drop(columns='index', inplace=True)
+        papers_ok = papers_sub.id.tolist()
+        print(f"Papers ok: {papers_sub.shape}")
+        papers_abs_sub = papers_abs[papers_abs['id'].isin(papers_ok)]
+        print(f"Paper-abstracts {papers_abs_sub.shape}")
+        papers_con_sub = papers_con_ok[papers_con_ok['id'].isin(papers_ok)]
+        print(f"Paper-concepts {papers_con_sub.shape}")
+        papers_meta_sub = papers_abs_sub.merge(papers_con_sub, on='id', how='left')
+        papers_meta_sub = papers_meta_sub.sort_values(by='id', ascending=True).reset_index()
+        papers_meta_sub.drop(columns='index', inplace=True)
+        papers_meta_sub.rename(columns={'id': 'id2'}, inplace=True)
+        print(f"Paper-metadata {papers_meta_sub.shape}")
+        #dfP = papers_sub.merge(papers_meta_sub, on='id')
+        dfP = pd.concat([papers_sub, papers_meta_sub], axis=1)
+        #mismatched_count = len(dfP[dfP['id'] != dfP['id2']])
+        #print(f"Mismatched papers: {mismatched_count}")
+        dfP.drop(columns='id2', inplace=True)
+        print(f"Paper-all {dfP.shape}")
+        dfP.to_csv(os.path.join(full_path_nodes, 'papers.csv'), index=False)
 
-    paper_cites_paper = PP_sub.copy()
-    paper_cites_paper.rename(columns={'citing': 'src', 'cited':'tgt'}, inplace=True)
-    paper_cites_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_cites_paper.csv'),index=False)
+    # PP
+    PP = pd.read_csv(os.path.join(or_dir, 'PP.csv')) #citing, cited, year
+    years = sorted(PP['year'].drop_duplicates().tolist())
+    years = years[:-1]
 
-    #check no citing of other years
-    #P_year = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv'))
-    #papers_year = P_year['id'].tolist()
-    #PP_sub_ok = PP_sub[PP_sub['citing'].isin(papers_year)]
-    #print(f"PP ok {PP_sub_ok.shape}")
+    for i,year in enumerate(years):
+        print(year)
+        PP_sub = PP.loc[PP['year'] == year]
+        print(f"PP {PP_sub.shape}")
 
-    paper_is_cited_by_paper = PP_sub[['cited', 'citing', 'year']].copy()
-    paper_is_cited_by_paper.rename(columns={'cited': 'src', 'citing': 'tgt'}, inplace=True)
-    paper_is_cited_by_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_is_cited_by_paper.csv'), index=False)
- """
+        paper_cites_paper = PP_sub.copy()
+        paper_cites_paper.rename(columns={'citing': 'src', 'cited':'tgt'}, inplace=True)
+        paper_cites_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_cites_paper.csv'),index=False)
 
-# AP
-"""
-AP = pd.read_csv(os.path.join(or_dir, 'PA.csv')) #paper, #author, #position
+        #check no citing of other years
+        #P_year = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv'))
+        #papers_year = P_year['id'].tolist()
+        #PP_sub_ok = PP_sub[PP_sub['citing'].isin(papers_year)]
+        #print(f"PP ok {PP_sub_ok.shape}")
 
-for i,year in enumerate(years):
-    print(year)
-    P_year = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv'))
-    papers_year = P_year['id'].tolist()
-    AP_sub = AP[AP['paper'].isin(papers_year)]
-    print(f"AP {AP_sub.shape}")
-
-    paper_is_written_by_author = AP_sub.copy()
-    paper_is_written_by_author.rename(columns={'paper': 'src', 'author': 'tgt'}, inplace=True)
-    paper_is_written_by_author.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_is_written_by_author.csv'), index=False)
-
-    author_writes_paper = AP_sub[['author', 'paper', 'position']].copy()
-    author_writes_paper.rename(columns={'author': 'src', 'paper': 'tgt'}, inplace=True)
-    author_writes_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_writes_paper.csv'), index=False)
-"""
-
-# AUTHORS
-"""
-authors_metadata = pd.read_csv(os.path.join(or_dir, 'authors_metadata.csv'))
-print(f"authors metadata {authors_metadata.shape}")
-
-for i,year in enumerate(years):
-    print(year)
-    AP = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_writes_paper.csv'))
-    A_year = AP['src'].drop_duplicates().tolist()
-    authors_metadata_sub = authors_metadata[authors_metadata['id'].isin(A_year)]
-    print(f"authors metadata {authors_metadata_sub.shape}")
-    authors_metadata_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/authors.csv'), index=False)
-"""
-
-#AI
-"""
-AI = pd.read_csv(os.path.join(or_dir, 'AI.csv')) #author_id, institution_id
-print(f"authors institutions {AI.shape}")
-
-for i,year in enumerate(years):
-    print(year)
-    authors = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/nodes/authors.csv'))
-    A_year = authors['id'].drop_duplicates().tolist()
-    AI_sub = AI[AI['author_id'].isin(A_year)]
-    print(f"AI {AI_sub.shape}")
-
-    author_is_affiliated_with_institution = AI_sub.copy()
-    author_is_affiliated_with_institution.rename(columns={'author_id': 'src', 'institution_id': 'tgt'}, inplace=True)
-    author_is_affiliated_with_institution.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/author_is_affiliated_with_institution.csv'), index=False)
-
-    institution_is_affiliation_of_author = AI_sub[['institution_id', 'author_id']].copy()
-    institution_is_affiliation_of_author.rename(columns={'institution_id': 'src', 'author_id': 'tgt'}, inplace=True)
-    institution_is_affiliation_of_author.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/institution_is_affiliation_of_author.csv'), index=False)
-"""
-
-#INSTITUTIONS
-institutions = pd.read_csv(os.path.join(or_dir, 'institutions.csv'))
-print(f"institutions {institutions.shape}")
-
-for i,year in enumerate(years):
-    print(year)
-    AI = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_is_affiliated_with_institution.csv'))
-    I_year = AI['tgt'].drop_duplicates().tolist()
-    institutions_sub = institutions[institutions['id'].isin(I_year)]
-    print(f"institutions {institutions_sub.shape}")
-    institutions_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/institutions.csv'), index=False)
+        paper_is_cited_by_paper = PP_sub[['cited', 'citing', 'year']].copy()
+        paper_is_cited_by_paper.rename(columns={'cited': 'src', 'citing': 'tgt'}, inplace=True)
+        paper_is_cited_by_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_is_cited_by_paper.csv'), index=False)
 
 
+    # AP
+    AP = pd.read_csv(os.path.join(or_dir, 'PA.csv')) #paper, #author, #position
+
+    for i,year in enumerate(years):
+        print(year)
+        P_year = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv'))
+        papers_year = P_year['id'].tolist()
+        AP_sub = AP[AP['paper'].isin(papers_year)]
+        print(f"AP {AP_sub.shape}")
+
+        paper_is_written_by_author = AP_sub.copy()
+        paper_is_written_by_author.rename(columns={'paper': 'src', 'author': 'tgt'}, inplace=True)
+        paper_is_written_by_author.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_is_written_by_author.csv'), index=False)
+
+        author_writes_paper = AP_sub[['author', 'paper', 'position']].copy()
+        author_writes_paper.rename(columns={'author': 'src', 'paper': 'tgt'}, inplace=True)
+        author_writes_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_writes_paper.csv'), index=False)
 
 
+    # AUTHORS
+    authors_metadata = pd.read_csv(os.path.join(or_dir, 'authors_metadata.csv'))
+    print(f"authors metadata {authors_metadata.shape}")
 
+    for i,year in enumerate(years):
+        print(year)
+        AP = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_writes_paper.csv'))
+        A_year = AP['src'].drop_duplicates().tolist()
+        authors_metadata_sub = authors_metadata[authors_metadata['id'].isin(A_year)]
+        print(f"authors metadata {authors_metadata_sub.shape}")
+        authors_metadata_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/authors.csv'), index=False)
+
+    #AI
+    AI = pd.read_csv(os.path.join(or_dir, 'AI.csv')) #author_id, institution_id
+    print(f"authors institutions {AI.shape}")
+
+    for i,year in enumerate(years):
+        print(year)
+        authors = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/nodes/authors.csv'))
+        A_year = authors['id'].drop_duplicates().tolist()
+        AI_sub = AI[AI['author_id'].isin(A_year)]
+        print(f"AI {AI_sub.shape}")
+
+        author_is_affiliated_with_institution = AI_sub.copy()
+        author_is_affiliated_with_institution.rename(columns={'author_id': 'src', 'institution_id': 'tgt'}, inplace=True)
+        author_is_affiliated_with_institution.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/author_is_affiliated_with_institution.csv'), index=False)
+
+        institution_is_affiliation_of_author = AI_sub[['institution_id', 'author_id']].copy()
+        institution_is_affiliation_of_author.rename(columns={'institution_id': 'src', 'author_id': 'tgt'}, inplace=True)
+        institution_is_affiliation_of_author.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/institution_is_affiliation_of_author.csv'), index=False)
+
+    #INSTITUTIONS
+    institutions = pd.read_csv(os.path.join(or_dir, 'institutions.csv'))
+    print(f"institutions {institutions.shape}")
+
+    for i,year in enumerate(years):
+        print(year)
+        AI = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_is_affiliated_with_institution.csv'))
+        I_year = AI['tgt'].drop_duplicates().tolist()
+        institutions_sub = institutions[institutions['id'].isin(I_year)]
+        print(f"institutions {institutions_sub.shape}")
+        institutions_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/institutions.csv'), index=False)
+
+
+def encoding_attributes(df, n_type):
+
+    if n_type == "author":
+        df_ok = df[['name', 'n_works', 'n_cit', 'impact_factor', 'h_index', 'i10_index']].copy()
+        for col in df_ok.columns:
+            if col == 'name':
+                df_ok = encoding_short_text(df_ok, col, target_dim=64)
+            else:
+                df_ok = scale_numeric(df_ok, col)
+        return df_ok
+
+    elif n_type == "institution":
+        df_ok = df[['name', 'country-code', 'type']].copy()
+        for col in df_ok.columns:
+            if col == 'name':
+                df_ok = encoding_short_text(df_ok, col, target_dim=64)
+            elif col == 'country-code':
+                df_ok = one_hot_encoding(df_ok, col)
+            else: #type
+                df_ok[col] = df_ok[col].fillna("unknown")
+                df_ok[col] = df_ok[col].astype('category')
+        return df_ok
+
+    elif n_type == "paper":
+        df_ok = df[['name', 'country-code', 'type']].copy()
+        for col in df.columns:
+            if col == 'title':
+                df_ok = encoding_short_text(df_ok, col, target_dim=128)
+            elif col == "abstract":
+                df_ok = encoding_long_text(df_ok, col)
+            else: #num_citations
+                df_ok = scale_numeric(df_ok, col)
+        return df_ok
+
+    else:
+        raise ValueError(f"Unsupported node type: {n_type}")
 
 

@@ -9,6 +9,8 @@ from sklearn.decomposition import PCA
 from sentence_transformers import SentenceTransformer
 from torch_geometric.data import HeteroData
 
+from data_preprocessing.openalex import encoding_attributes
+
 
 
 def open_pickle(pckl_file):
@@ -68,8 +70,14 @@ def edges_encoding(df):
     return torch.tensor(df.values.T)
 
 
-def attributes_encoding(df):
+def attributes_encoding(df, dataset_name, n_type):
     tensors = []
+
+    if dataset_name == "openalex":
+        df = encoding_attributes(df, n_type) #openalex.py
+    elif dataset_name == "mumin":
+        print("work in progress")
+
     for col in df.columns:
         print('##### Processing column ', col, ' #####')
         if df[col].dtype == 'int64':
@@ -88,6 +96,7 @@ def attributes_encoding(df):
             tensors.append(torch.tensor(encoded_values, dtype=torch.int32).unsqueeze(1))
         else:
             raise ValueError(f"Unsupported column type: {df[col].dtype}")
+
     # Concatenate all tensors along the last dimension
     return torch.cat(tensors, dim=1)
 
@@ -161,6 +170,33 @@ def encoding_short_text(df, col, target_dim=64):
     df[col + '_encoded'] = [embedding.tolist() for embedding in
                             reduced_embeddings]  # Store the reduced embeddings in a single column as lists
     df.drop([col], axis=1, inplace=True)
+    return df
+
+
+def encoding_long_text(df, col):
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    MAX_LENGTH = 384 #modelmax_seq_length
+
+    # Function to create embedding for a given text
+    def create_embedding(text):
+        if text is None:
+            return None
+        # Split the text if it's longer than the max length limit
+        if len(text.split()) > MAX_LENGTH:
+            # Split into chunks within the max token length
+            chunks = [text[i:i + MAX_LENGTH] for i in range(0, len(text.split()), MAX_LENGTH)]
+            # Compute embeddings for each part and take the mean
+            chunk_embeddings = [model.encode(chunk) for chunk in chunks]
+            return np.mean(chunk_embeddings, axis=0)
+        else:
+            # Directly compute embedding if within limit
+            return model.encode(text)
+
+    df[col + '_encoded'] = df[col].apply(create_embedding)
+    mean_embedding = np.mean([emb for emb in df[col + '_encoded'] if emb is not None], axis=0) # Calculate mean embedding for non-None entries
+    df[col + '_encoded'] = df[col + '_encoded'].apply(lambda emb: mean_embedding if emb is None else emb)
+    df = df.drop(columns=[col])
+
     return df
 
 
