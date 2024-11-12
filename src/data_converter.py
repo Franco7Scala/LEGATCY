@@ -127,6 +127,7 @@ def extract_knowledge(dataset_name, no_snapshot):
 
     for fname in os.listdir(os.path.join(original_dir, 'edges')):
         e_type = fname[:-4]  # remove the last 4 characters (".csv")
+        print(f"processing edge type {e_type}")
         edge_info = extract_edge_info(fname)
         n_type_src = edge_info[0]
         n_type_tgt = edge_info[1]
@@ -134,10 +135,12 @@ def extract_knowledge(dataset_name, no_snapshot):
         key_tgt = n_type_tgt + 's'
         f = os.path.join(original_dir, 'edges', fname)
         df = pd.read_csv(f, usecols=['src', 'tgt'])
+        print(f"original csv shape: {df.shape}")
         df['src'] = df['src'].map(mapping[key_src])
         df['tgt'] = df['tgt'].map(mapping[key_tgt])
         K_new_edges[e_type] = df[['src', 'tgt']].values.tolist()
         Xe = edges_encoding(df=df)
+        print(f"Dimension of Xe {Xe.shape}")
 
         if no_snapshot==0:
             K_old_edges[e_type] = []
@@ -146,7 +149,8 @@ def extract_knowledge(dataset_name, no_snapshot):
             old_new_edges = open_pickle(os.path.join(heterodata_prev_dir, 'K_new_edges.pkl'))[e_type]
             K_old_edges[e_type] = old_old_edges + old_new_edges
             Xe_prev = torch.load(os.path.join(heterodata_prev_dir, 'edgelists', e_type+'.pt'))
-            Xe = torch.cat((Xe_prev, Xe), dim=0)
+            print(f"Dimension of Xe_prev {Xe_prev.shape}")
+            Xe = torch.cat((Xe_prev, Xe), dim=1)
 
         torch.save(Xe, os.path.join(heterodata_dir, 'edgelists', e_type + '.pt'))
         #cprint(f'{e_type} edgelist saved', Color.EXPERIMENT_STATUS_LOW_PRIORITY)

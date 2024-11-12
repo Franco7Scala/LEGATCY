@@ -83,6 +83,13 @@ def get_openalex_sub_concepts_list():
                     "computer vision", "data mining", "speech recognition", "programming language",
                     "computer network", "machine learning"] #"computer architecture", "real time computing", "computer graphics images", "human computer interaction",
 
+def get_ohe_types(dataset_name, n_type, col):
+    values = []
+    for i in range(7):
+        df = pd.read_csv(os.path.join(get_base_dir(), f"{dataset_name}/snapshot_{i}/original_data/nodes/{n_type}s.csv"))
+        values.extend(df[col].fillna("unknown").drop_duplicates().tolist())
+    return list(set(values))
+
 
 def edges_encoding(df):
     #print(df.dtypes)
@@ -93,49 +100,83 @@ def edges_encoding(df):
 def attributes_encoding(df, dataset_name, n_type, no_snapshot):
     print(f"Processing {n_type}")
     columns_ok = []
+    df_ok = None
     if dataset_name == "openalex":
         df = pd.read_csv(os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', f'original_data/nodes/{n_type}s.csv'))
         if n_type == "author":
             df_ok = df[['name', 'n_works', 'n_cit', 'impact_factor', 'h_index', 'i10_index']].copy()
-            columns_ok = df_ok.columns.tolist()
-            for col in df_ok.columns:
+            for col in df_ok.columns.tolist():
                 if col == 'name':
                     df_ok = encoding_short_text(df_ok, col, target_dim=64)
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda lista: [float(x) for x in lista])
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda x: torch.tensor(x))
+                    print(f"Column {col + '_encoded'} of type {df_ok[col + '_encoded'].dtype} with elements of type {type(df_ok[col + '_encoded'].tolist()[0])}")
+                    columns_ok.append(col+'_encoded')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
                 else:
                     df_ok = scale_numeric(df_ok, col)
+                    print(f"Column {col + '_scaled'} of type {df_ok[col + '_scaled'].dtype} with elements of type {type(df_ok[col + '_scaled'].tolist()[0])}")
+                    columns_ok.append(col + '_scaled')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
         elif n_type == "institution":
             df_ok = df[['name', 'country-code', 'type']].copy()
-            columns_ok = df_ok.columns.tolist()
-            for col in df_ok.columns:
+            for col in df_ok.columns.tolist():
                 if col == 'name':
                     df_ok = encoding_short_text(df_ok, col, target_dim=64)
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda lista: [float(x) for x in lista])
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda x: torch.tensor(x))
+                    print(f"Column {col + '_encoded'} of type {df_ok[col + '_encoded'].dtype} with elements of type {type(df_ok[col + '_encoded'].tolist()[0])}")
+                    columns_ok.append(col + '_encoded')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
                 elif col == 'country-code':
-                    df_ok = one_hot_encoding(df_ok, col)
+                    df_ok[col] = df_ok[col].fillna("unknown")
+                    df_ok = one_hot_encoding(dataset_name, n_type, df_ok, col)
+                    print(f"Column {col + '_ohe'} of type {df_ok[col + '_ohe'].dtype} with elements of type {type(df_ok[col + '_ohe'].tolist()[0])}")
+                    columns_ok.append(col + '_ohe')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
                 else:  # type
                     df_ok[col] = df_ok[col].fillna("unknown")
                     df_ok[col] = df_ok[col].astype('category')
+                    print(f"Column {col} of type {df_ok[col].dtype} with elements of type {type(df_ok[col].tolist()[0])}")
+                    columns_ok.append(col)
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
         elif n_type == "paper":
             df_ok = df[['title', 'num_citations', 'abstract', 'filtered_concepts']].copy()
-            columns_ok = df_ok.columns.tolist()
-            for col in df_ok.columns:
+            for col in df_ok.columns.tolist():
                 if col == 'title':
                     df_ok = encoding_short_text(df_ok, col, target_dim=128)
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda lista: [float(x) for x in lista])
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda x: torch.tensor(x))
+                    print(f"Column {col+'_encoded'} of type {df_ok[col+'_encoded'].dtype} with elements of type {type(df_ok[col+'_encoded'].tolist()[0])}")
+                    columns_ok.append(col+'_encoded')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
                 elif col == "abstract":
                     df_ok = encoding_long_text(df_ok, col)
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda lista: [float(x) for x in lista])
+                    df_ok[col+'_encoded'] = df_ok[col+'_encoded'].apply(lambda x: torch.tensor(x))
+                    print(f"Column {col+'_encoded'} of type {df_ok[col + '_encoded'].dtype} with elements of type {type(df_ok[col + '_encoded'].tolist()[0])}")
+                    columns_ok.append(col + '_encoded')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
                 elif col == 'filtered_concepts':
                     col = "concepts"
                     df_ok.rename(columns={'filtered_concepts': col}, inplace=True)
-                    df_ok = one_hot_encoding_list(df, col, get_openalex_sub_concepts_list())
+                    df_ok = one_hot_encoding_list(df_ok, col, get_openalex_sub_concepts_list())
+                    print(f"Column {col+'_ohe'} of type {df_ok[col + '_ohe'].dtype} with elements of type {type(df_ok[col + '_ohe'].tolist()[0])}")
+                    columns_ok.append(col + '_ohe')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
                 else:  # 'num_citations:
                     df_ok = scale_numeric(df_ok, col)
+                    print(f"Column {col+'_scaled'} of type {df_ok[col + '_scaled'].dtype} with elements of type {type(df_ok[col + '_scaled'].tolist()[0])}")
+                    columns_ok.append(col + '_scaled')
+                    print(f"Processed {col}: columns are now {df_ok.columns.tolist()}")
         else:
             raise ValueError(f"Unsupported node type: {n_type}")
     elif dataset_name == "mumin":
-        df_ok = pd.DataFrame()
         print("work in progress")
 
     tensors = []
     print(columns_ok)
+    print(df_ok.columns.tolist())
     for col in columns_ok:
         print(col, df_ok[col].dtype)
         print('##### Processing column ', col, ' #####')
@@ -146,23 +187,9 @@ def attributes_encoding(df, dataset_name, n_type, no_snapshot):
         elif df_ok[col].dtype == 'bool':
             tensors.append(torch.tensor(df_ok[col].values, dtype=torch.bool).unsqueeze(1))
         elif df_ok[col].dtype == 'object':
-            if isinstance(df_ok[col].iloc[0], str):
-                try:
-                    df_ok[col] = df_ok[col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
-                except (SyntaxError, ValueError) as e:
-                    print(f"Warning: Failed to convert strings in column '{col}' to lists. {e}")
-
-            if isinstance(df_ok[col].iloc[0], list):
-                embeddings_list = [torch.tensor(e, dtype=torch.float32) for e in df_ok[col]]
-                tensors.append(torch.stack(embeddings_list))
-            else:
-                raise ValueError(f"Unexpected object type in column '{col}'.")
-            """
-            MUMIN
             embedding_tensors = df_ok[col].apply(lambda x: torch.tensor(x, dtype=torch.float32) if not isinstance(x, torch.Tensor) else x)
             embedding_stack = torch.stack(embedding_tensors.tolist())  # Convert to list before stacking
             tensors.append(embedding_stack)
-            """
         elif df_ok[col].dtype == 'category':
             enc = LabelEncoder()
             encoded_values = enc.fit_transform(df_ok[col])
@@ -172,6 +199,7 @@ def attributes_encoding(df, dataset_name, n_type, no_snapshot):
 
     # Concatenate all tensors along the last dimension
     return torch.cat(tensors, dim=1)
+
 
 
 # scaling of numeric columns
@@ -303,12 +331,16 @@ def parsing_embedding_int(df, col):
     return df
 
 
-def one_hot_encoding(df, col):
+#get_ohe_types(dataset_name, n_type, col)
+def one_hot_encoding(dataset_name, n_type, df, col):
     df[col] = df[col].astype(str)  # added for int values (cluster_labels)
+    """"
     if df[col].dtype.name == 'category':
         unique_categories = df[col].cat.categories.tolist()
     else:
         unique_categories = df[col].unique().tolist()
+    """
+    unique_categories = get_ohe_types(dataset_name, n_type, col)
     num_categories = len(unique_categories)
     category_to_index = {category: idx for idx, category in enumerate(unique_categories)}
 
@@ -384,5 +416,4 @@ def extract_heterodata_sub(data, mask):
             data_sub[edge_type].edge_index = filtered_edge_index
 
     return data_sub
-
 
