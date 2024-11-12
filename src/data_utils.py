@@ -12,7 +12,8 @@ from torch_geometric.data import HeteroData
 
 
 def get_base_dir():
-    return '/mnt/nas/martirano'  #data
+    return '/home/scala/projects/GNN_ContinualLerning/data'
+    #return '/mnt/nas/martirano'  #data
 
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
@@ -24,8 +25,7 @@ def save_dict_to_pickle(data_dict, pckl_file):
 
 
 def get_target_type(dataset_name):
-    base_dir = '/mnt/nas/martirano' #data
-    heterodata_dir = os.path.join(base_dir, dataset_name, 'snapshot_0', 'heterodata')
+    heterodata_dir = os.path.join(get_base_dir(), dataset_name, 'snapshot_0', 'heterodata')
     fname_labels = next((f for f in os.listdir(heterodata_dir) if f.endswith(".pt")), None)
     if fname_labels is None:
         if dataset_name == "openalex":

@@ -8,19 +8,18 @@ import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.transforms import AddMetaPaths
 
-from src.data_utils import open_pickle, get_target_type, extract_edge_info, get_metapaths
-
+from src.data_utils import open_pickle, get_target_type, extract_edge_info, get_metapaths, get_base_dir
 
 
 def build_heterodata(dataset_name, no_snapshot):
-    heterodata_dir = os.path.join('data', dataset_name, 'snapshot_'+str(no_snapshot), 'heterodata')
+    heterodata_dir = os.path.join(get_base_dir(), dataset_name, 'snapshot_'+str(no_snapshot), 'heterodata')
 
     data = HeteroData()
 
     # nodes
     for fname in os.listdir(os.path.join(heterodata_dir, 'features')):
-        n_type = fname[:-3] #remove the last 3 characters (".pt")
-        data[n_type].x = torch.load(fname)
+        n_type = fname[:-4] #remove the last 3 characters (".pt")
+        data[n_type].x = torch.load(heterodata_dir + "/features/" + fname)
 
     #ground truth for target_type
     target_type = get_target_type(dataset_name)
@@ -32,7 +31,7 @@ def build_heterodata(dataset_name, no_snapshot):
         n_type_src = info[0]
         n_type_tgt = info[1]
         e_type = info[2]
-        data[n_type_src, e_type, n_type_tgt].edge_index = torch.load(fname)
+        data[n_type_src, e_type, n_type_tgt].edge_index = torch.load(heterodata_dir + "/edgelists/" + fname)
 
     #meta-paths
     metapaths = get_metapaths(dataset_name)
