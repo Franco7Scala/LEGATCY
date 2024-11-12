@@ -3,15 +3,16 @@ import pickle
 import torch
 import pandas as pd
 import numpy as np
+import ast
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sentence_transformers import SentenceTransformer
 from torch_geometric.data import HeteroData
 
-from data_preprocessing.openalex import encoding_attributes
 
-
+def get_base_dir():
+    return '/mnt/nas/martirano'  #data
 
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
@@ -23,7 +24,8 @@ def save_dict_to_pickle(data_dict, pckl_file):
 
 
 def get_target_type(dataset_name):
-    heterodata_dir = os.path.join('data', dataset_name, 'snapshot_0', 'heterodata')
+    base_dir = '/mnt/nas/martirano' #data
+    heterodata_dir = os.path.join(base_dir, dataset_name, 'snapshot_0', 'heterodata')
     fname_labels = next((f for f in os.listdir(heterodata_dir) if f.endswith(".pt")), None)
     if fname_labels is None:
         if dataset_name == "openalex":
@@ -73,36 +75,100 @@ def get_metapaths(dataset_name):
     return metapaths
 
 
+def get_openalex_sub_concepts_list():
+    return ["multimedia", "database", "internet privacy", "natural language processing", "data science",
+                    "artificial intelligence", "distributed computing", "computer hardware",
+                    "theoretical computer science", "library science", "operating system", "world wide web",
+                    "parallel computing", "information retrieval", "computer security", "knowledge management",
+                    "computer vision", "data mining", "speech recognition", "programming language",
+                    "computer network", "machine learning"] #"computer architecture", "real time computing", "computer graphics images", "human computer interaction",
+
+
 def edges_encoding(df):
+    #print(df.dtypes)
     return torch.tensor(df.values.T)
 
 
-def attributes_encoding(df, dataset_name, n_type):
-    tensors = []
 
+def attributes_encoding(df, dataset_name, n_type, no_snapshot):
+    print(f"Processing {n_type}")
+    columns_ok = []
     if dataset_name == "openalex":
-        df = encoding_attributes(df, n_type) #openalex.py
+        df = pd.read_csv(os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', f'original_data/nodes/{n_type}s.csv'))
+        if n_type == "author":
+            df_ok = df[['name', 'n_works', 'n_cit', 'impact_factor', 'h_index', 'i10_index']].copy()
+            columns_ok = df_ok.columns.tolist()
+            for col in df_ok.columns:
+                if col == 'name':
+                    df_ok = encoding_short_text(df_ok, col, target_dim=64)
+                else:
+                    df_ok = scale_numeric(df_ok, col)
+        elif n_type == "institution":
+            df_ok = df[['name', 'country-code', 'type']].copy()
+            columns_ok = df_ok.columns.tolist()
+            for col in df_ok.columns:
+                if col == 'name':
+                    df_ok = encoding_short_text(df_ok, col, target_dim=64)
+                elif col == 'country-code':
+                    df_ok = one_hot_encoding(df_ok, col)
+                else:  # type
+                    df_ok[col] = df_ok[col].fillna("unknown")
+                    df_ok[col] = df_ok[col].astype('category')
+        elif n_type == "paper":
+            df_ok = df[['title', 'num_citations', 'abstract', 'filtered_concepts']].copy()
+            columns_ok = df_ok.columns.tolist()
+            for col in df_ok.columns:
+                if col == 'title':
+                    df_ok = encoding_short_text(df_ok, col, target_dim=128)
+                elif col == "abstract":
+                    df_ok = encoding_long_text(df_ok, col)
+                elif col == 'filtered_concepts':
+                    col = "concepts"
+                    df_ok.rename(columns={'filtered_concepts': col}, inplace=True)
+                    df_ok = one_hot_encoding_list(df, col, get_openalex_sub_concepts_list())
+                else:  # 'num_citations:
+                    df_ok = scale_numeric(df_ok, col)
+        else:
+            raise ValueError(f"Unsupported node type: {n_type}")
     elif dataset_name == "mumin":
+        df_ok = pd.DataFrame()
         print("work in progress")
 
-    for col in df.columns:
+    tensors = []
+    print(columns_ok)
+    for col in columns_ok:
+        print(col, df_ok[col].dtype)
         print('##### Processing column ', col, ' #####')
-        if df[col].dtype == 'int64':
-            tensors.append(torch.tensor(df[col].values, dtype=torch.int32).unsqueeze(1))
-        elif df[col].dtype == 'float64':
-            tensors.append(torch.tensor(df[col].values, dtype=torch.float32).unsqueeze(1))
-        elif df[col].dtype == 'bool':
-            tensors.append(torch.tensor(df[col].values, dtype=torch.bool).unsqueeze(1))
-        elif df[col].dtype == 'object':
-            embedding_tensors = df[col].apply(lambda x: torch.tensor(x, dtype=torch.float32) if not isinstance(x, torch.Tensor) else x)
+        if df_ok[col].dtype == 'int64':
+            tensors.append(torch.tensor(df_ok[col].values, dtype=torch.int32).unsqueeze(1))
+        elif df_ok[col].dtype == 'float64':
+            tensors.append(torch.tensor(df_ok[col].values, dtype=torch.float32).unsqueeze(1))
+        elif df_ok[col].dtype == 'bool':
+            tensors.append(torch.tensor(df_ok[col].values, dtype=torch.bool).unsqueeze(1))
+        elif df_ok[col].dtype == 'object':
+            if isinstance(df_ok[col].iloc[0], str):
+                try:
+                    df_ok[col] = df_ok[col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+                except (SyntaxError, ValueError) as e:
+                    print(f"Warning: Failed to convert strings in column '{col}' to lists. {e}")
+
+            if isinstance(df_ok[col].iloc[0], list):
+                embeddings_list = [torch.tensor(e, dtype=torch.float32) for e in df_ok[col]]
+                tensors.append(torch.stack(embeddings_list))
+            else:
+                raise ValueError(f"Unexpected object type in column '{col}'.")
+            """
+            MUMIN
+            embedding_tensors = df_ok[col].apply(lambda x: torch.tensor(x, dtype=torch.float32) if not isinstance(x, torch.Tensor) else x)
             embedding_stack = torch.stack(embedding_tensors.tolist())  # Convert to list before stacking
             tensors.append(embedding_stack)
-        elif df[col].dtype == 'category':
+            """
+        elif df_ok[col].dtype == 'category':
             enc = LabelEncoder()
-            encoded_values = enc.fit_transform(df[col])
+            encoded_values = enc.fit_transform(df_ok[col])
             tensors.append(torch.tensor(encoded_values, dtype=torch.int32).unsqueeze(1))
         else:
-            raise ValueError(f"Unsupported column type: {df[col].dtype}")
+            raise ValueError(f"Unsupported column type: {df_ok[col].dtype}")
 
     # Concatenate all tensors along the last dimension
     return torch.cat(tensors, dim=1)
@@ -132,7 +198,9 @@ def convert_datetime_to_timestamp(df, col):
 # encoding of short texts
 # boost: apply PCA after SBERT on the individual attribute. Apply the mean to nan values
 def encoding_short_text(df, col, target_dim=64):
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
+    model = SentenceTransformer("all-MiniLM-L6-v2", device=device)
     # df[col+'_encoded'] = df.apply(lambda x: model.encode(x[col]), axis=1)
 
     # Convert the column to string if it's categorical
@@ -181,27 +249,43 @@ def encoding_short_text(df, col, target_dim=64):
 
 
 def encoding_long_text(df, col):
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-    MAX_LENGTH = 384 #modelmax_seq_length
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
+    model = SentenceTransformer("all-MiniLM-L6-v2", device=device)
+    MAX_LENGTH = 384  # Model's max sequence length
 
     # Function to create embedding for a given text
     def create_embedding(text):
         if text is None:
             return None
-        # Split the text if it's longer than the max length limit
+        # Split the text into chunks within the max token length
         if len(text.split()) > MAX_LENGTH:
-            # Split into chunks within the max token length
             chunks = [text[i:i + MAX_LENGTH] for i in range(0, len(text.split()), MAX_LENGTH)]
-            # Compute embeddings for each part and take the mean
+            # Compute embeddings for each chunk and take the mean
             chunk_embeddings = [model.encode(chunk) for chunk in chunks]
             return np.mean(chunk_embeddings, axis=0)
         else:
             # Directly compute embedding if within limit
             return model.encode(text)
 
-    df[col + '_encoded'] = df[col].apply(create_embedding)
-    mean_embedding = np.mean([emb for emb in df[col + '_encoded'] if emb is not None], axis=0) # Calculate mean embedding for non-None entries
+    # Process the DataFrame in batches to manage memory usage
+    batch_size = 32  # Adjust batch size based on available memory
+    encoded_values = []
+
+    for i in range(0, len(df), batch_size):
+        batch = df[col].iloc[i:i + batch_size]
+        batch_embeddings = batch.apply(create_embedding)
+        encoded_values.extend(batch_embeddings)
+
+        # Clear the CUDA cache to free up memory
+        torch.cuda.empty_cache()
+
+    df[col + '_encoded'] = encoded_values
+    # Calculate mean embedding for non-None entries
+    mean_embedding = np.mean([emb for emb in df[col + '_encoded'] if emb is not None], axis=0)
+    # Replace None values with the mean embedding
     df[col + '_encoded'] = df[col + '_encoded'].apply(lambda emb: mean_embedding if emb is None else emb)
+    # Drop the original column
     df = df.drop(columns=[col])
 
     return df
@@ -249,7 +333,7 @@ def one_hot_encoding_list(df, col, values):
         one_hot_vector = np.zeros(num_values, dtype=int) # Initialize a zero vector for the number of concepts
         # Set the index of each present concept to 1
         for elem in eval(lista):
-            elem_lower = elem.lower()
+            elem_lower = elem[1].lower()
             if elem_lower in values_dict:
                 one_hot_vector[values_dict[elem_lower]] = 1
         return torch.tensor(one_hot_vector, dtype=torch.int32)

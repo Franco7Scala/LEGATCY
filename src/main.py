@@ -1,9 +1,8 @@
 import os
-import pickle
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch_geometric.nn import Linear, to_hetero
+from torch_geometric.nn import to_hetero
 
 
 from src import utils, trainer

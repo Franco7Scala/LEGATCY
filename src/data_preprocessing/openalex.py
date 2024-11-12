@@ -7,8 +7,6 @@ import pandas as pd
 import json
 import pickle
 
-from ..data_utils import scale_numeric, encoding_short_text, encoding_long_text, one_hot_encoding, one_hot_encoding_list, save_dict_to_pickle
-
 
 dataset_name = "openalex"
 or_dir = '/mnt/nas/martirano/openalex/raw/original_data'
@@ -143,48 +141,6 @@ def split_original_data(or_dir):
         institutions_sub = institutions[institutions['id'].isin(I_year)]
         print(f"institutions {institutions_sub.shape}")
         institutions_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/institutions.csv'), index=False)
-
-
-def encoding_attributes(df, n_type):
-
-    if n_type == "author":
-        df_ok = df[['name', 'n_works', 'n_cit', 'impact_factor', 'h_index', 'i10_index']].copy()
-        for col in df_ok.columns:
-            if col == 'name':
-                df_ok = encoding_short_text(df_ok, col, target_dim=64)
-            else:
-                df_ok = scale_numeric(df_ok, col)
-        return df_ok
-
-    elif n_type == "institution":
-        df_ok = df[['name', 'country-code', 'type']].copy()
-        for col in df_ok.columns:
-            if col == 'name':
-                df_ok = encoding_short_text(df_ok, col, target_dim=64)
-            elif col == 'country-code':
-                df_ok = one_hot_encoding(df_ok, col)
-            else: #type
-                df_ok[col] = df_ok[col].fillna("unknown")
-                df_ok[col] = df_ok[col].astype('category')
-        return df_ok
-
-    elif n_type == "paper":
-        df_ok = df[['name', 'country-code', 'type', 'filtered_concepts']].copy()
-        for col in df.columns:
-            if col == 'title':
-                df_ok = encoding_short_text(df_ok, col, target_dim=128)
-            elif col == "abstract":
-                df_ok = encoding_long_text(df_ok, col)
-            elif col == 'filtered_concepts':
-                col = "concepts"
-                df_ok.rename(columns={'filtered_concepts': col}, inplace=True)
-                df_ok = one_hot_encoding_list(df, col, get_sub_concepts_list())
-            else: #'num_citations:
-                df_ok = scale_numeric(df_ok, col)
-        return df_ok
-
-    else:
-        raise ValueError(f"Unsupported node type: {n_type}")
 
 
 def get_sub_concepts_list():
