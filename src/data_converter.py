@@ -13,19 +13,20 @@ import os
 import pandas as pd
 import torch
 
-from src.data_utils import open_pickle, save_dict_to_pickle, get_target_type, extract_edge_info, attributes_encoding, edges_encoding
+from src.data_utils import open_pickle, save_dict_to_pickle, get_target_type, extract_edge_info, attributes_encoding, edges_encoding, get_base_dir
+
+
 #from src.utils import Color, cprint
 
 
 def extract_knowledge(dataset_name, no_snapshot):
 
     print(f"Processing snapshot {no_snapshot}")
-    base_dir = '/mnt/nas/martirano' #data
-    original_dir = os.path.join(base_dir, dataset_name, 'snapshot_'+str(no_snapshot), 'original_data')
-    heterodata_dir = os.path.join(base_dir, dataset_name, 'snapshot_'+str(no_snapshot), 'heterodata')
-    heterodata_prev_dir = os.path.join(base_dir, dataset_name, f'snapshot_{(no_snapshot-1)}', 'heterodata')
+    original_dir = os.path.join(get_base_dir(), dataset_name, 'snapshot_'+str(no_snapshot), 'original_data')
+    heterodata_dir = os.path.join(get_base_dir(), dataset_name, 'snapshot_'+str(no_snapshot), 'heterodata')
+    heterodata_prev_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{(no_snapshot-1)}', 'heterodata')
 
-    mapping_labels = open_pickle(os.path.join(base_dir, dataset_name, 'mapping_labels.pkl'))
+    mapping_labels = open_pickle(os.path.join(get_base_dir(), dataset_name, 'mapping_labels.pkl'))
     target_type = get_target_type(dataset_name)
     Y_df = pd.read_csv(os.path.join(original_dir, target_type + '_labels.csv'))
 
@@ -165,7 +166,7 @@ dataset_name = "openalex"
 snapshots = range(0,7) #0
 
 for snapshot in snapshots:
-    heterodata_dir = os.path.join('/mnt/nas/martirano', dataset_name, f'snapshot_{snapshot}', 'heterodata')
+    heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{snapshot}', 'heterodata')
     os.makedirs(heterodata_dir, exist_ok=True)
     os.makedirs(os.path.join(heterodata_dir, 'features'), exist_ok=True)
     os.makedirs(os.path.join(heterodata_dir, 'edgelists'), exist_ok=True)

@@ -36,7 +36,7 @@ for run in range(len(training_seeds)):
 
     model = GAT_enhanced(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
     model = to_hetero(model, data.metadata(), aggr="sum")
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = utils.get_device()
     data, model = data.to(device), model.to(device)
 
     #TRAIN THE MODEL

@@ -21,10 +21,9 @@ class Color(Enum):
 
 training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
-
-
+def get_device():
+    return torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
 
 """

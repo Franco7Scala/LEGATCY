@@ -10,10 +10,12 @@ from sklearn.decomposition import PCA
 from sentence_transformers import SentenceTransformer
 from torch_geometric.data import HeteroData
 
+from src import utils
+
 
 def get_base_dir():
-    #return '/home/scala/projects/GNN_ContinualLerning/data'
-    return '/mnt/nas/martirano'  #data
+    return '/home/scala/projects/GNN_ContinualLerning/data'
+    #return '/mnt/nas/martirano'  #data
 
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
@@ -226,7 +228,7 @@ def convert_datetime_to_timestamp(df, col):
 # encoding of short texts
 # boost: apply PCA after SBERT on the individual attribute. Apply the mean to nan values
 def encoding_short_text(df, col, target_dim=64):
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = utils.get_device()
     print(f"Device: {device}")
     model = SentenceTransformer("all-MiniLM-L6-v2", device=device)
     # df[col+'_encoded'] = df.apply(lambda x: model.encode(x[col]), axis=1)
@@ -277,7 +279,7 @@ def encoding_short_text(df, col, target_dim=64):
 
 
 def encoding_long_text(df, col):
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = utils.get_device()
     print(f"Device: {device}")
     model = SentenceTransformer("all-MiniLM-L6-v2", device=device)
     MAX_LENGTH = 384  # Model's max sequence length
