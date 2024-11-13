@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.nn import to_hetero
 
-
+from src import utils
 from src.models.GAT_enhanced import GAT_enhanced
 from src.utils import set_random_seed, training_seeds, processing_results, compute_weights
 from src.data_utils import get_target_type
