@@ -5,9 +5,8 @@ import torch.nn as nn
 from torch_geometric.nn import to_hetero
 
 
-from src import utils, trainer
 from src.models.GAT_enhanced import GAT_enhanced
-from src.utils import set_random_seed, processing_results, compute_weights
+from src.utils import set_random_seed, training_seeds, processing_results, compute_weights
 from src.data_utils import get_target_type
 from src.data_loader import build_heterodata, get_knowledge
 from src.trainer import train_node_classifier, eval_node_classifier
@@ -15,25 +14,29 @@ from src.trainer import train_node_classifier, eval_node_classifier
 
 dataset_name = "openalex"
 no_snapshot = 1 #current snapshot
+print("Building heterodata...")
 data = build_heterodata(dataset_name=dataset_name, no_snapshot=no_snapshot)
+print("heterodata object correctly build!")
+print(data)
 K_new_nodes, K_new_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=no_snapshot, new=True)
 K_old_nodes, K_old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=no_snapshot, new=False)
 target_type = get_target_type(dataset_name)
 num_classes = len(torch.unique(data[target_type].y))
+print(f"Number of classes: {num_classes}")
 strategy = "RS2"
-output_dir = os.path.join("data", dataset_name, "snapshot_" + str(no_snapshot), "processed_data")
+output_dir = os.path.join("data", dataset_name, f"snapshot_{no_snapshot}", "processed_data")
 
 l_micro = []
 l_macro = []
 l_weigh = []
 l_auc = []
-for run in range(len(utils.training_seeds)):
-    print(f"Performing run n {run} on {len(utils.training_seeds)}...")
-    set_random_seed(utils.training_seeds[run])
+for run in range(len(training_seeds)):
+    print(f"Performing run n {run} on {len(training_seeds)}...")
+    set_random_seed(training_seeds[run])
 
     model = GAT_enhanced(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
     model = to_hetero(model, data.metadata(), aggr="sum")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
     data, model = data.to(device), model.to(device)
 
     #TRAIN THE MODEL
