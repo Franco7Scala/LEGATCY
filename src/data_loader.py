@@ -26,6 +26,7 @@ def build_heterodata(dataset_name, no_snapshot):
     target_type = get_target_type(dataset_name)
     data[target_type].y = torch.load(os.path.join(heterodata_dir, f'{target_type}_labels.pt'))
     print(f"No of nodes of labels: {data[target_type].y.shape[0]}")
+    print()
 
     #edges
     for fname in os.listdir(os.path.join(heterodata_dir, 'edgelists')):
@@ -37,18 +38,6 @@ def build_heterodata(dataset_name, no_snapshot):
         if edge_index.dtype == torch.float64:
             edge_index = edge_index.to(torch.int64)
         data[n_type_src, e_type, n_type_tgt].edge_index = edge_index
-
-        src_nodes, tgt_nodes = edge_index[0], edge_index[1]
-
-        # Get the number of nodes for each node type
-        num_src_nodes = data[n_type_src].x.shape[0]
-        num_tgt_nodes = data[n_type_tgt].x.shape[0]
-
-        # Ensure that all node indices are within valid bounds
-        if not (src_nodes < num_src_nodes).all() or not (tgt_nodes < num_src_nodes).all():
-            print(f"Warning: Some edge indices are out of range for the respective node types.")
-        else:
-            print(f"All edge indices are within valid ranges for {info}.")
 
     #print("Adding meta-paths...")
 
