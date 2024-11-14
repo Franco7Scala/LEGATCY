@@ -3,7 +3,7 @@ import shutil
 
 dataset_name = "openalex"
 n_snapshot = "0"
-authors_to_keep = ["A5004271128", "A5087188826", "A5062823200", "A5053183805", "A5034587660", "A5034709081", "A5042747460"]
+authors_to_keep = ["A5004271128", "A5087188826", "A5062823200", "A5053183805", "A5034587660", "A5028089542", "A5038199341"] # gli ultimi due sono presenti sia nello 0 che nell'1
 source_base_path = "/Users/francesco/Software/Python/GNN_ContinualLearning/data"
 
 
