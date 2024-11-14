@@ -14,8 +14,8 @@ from src import utils
 
 
 def get_base_dir():
-    return '/home/scala/projects/GNN_ContinualLerning/data'
-    #return '/mnt/nas/martirano'  #data
+    #return '/home/scala/projects/GNN_ContinualLerning/data'
+    return '/mnt/nas/martirano'  #data
 
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
@@ -103,7 +103,8 @@ def attributes_encoding(df, dataset_name, n_type, no_snapshot):
     print(f"Processing {n_type}")
     columns_ok = []
     df_ok = None
-    if dataset_name == "openalex":
+    #if dataset_name == "openalex":
+    if "openalex" in dataset_name:
         df = pd.read_csv(os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', f'original_data/nodes/{n_type}s.csv'))
         if n_type == "author":
             df_ok = df[['name', 'n_works', 'n_cit', 'impact_factor', 'h_index', 'i10_index']].copy()
@@ -270,7 +271,7 @@ def encoding_short_text(df, col, target_dim=64):
         embeddings = embeddings.apply(replace_missing)
 
     embeddings_matrix = np.vstack(embeddings)
-    pca = PCA(n_components=target_dim)
+    pca = PCA(n_components=min(target_dim, embeddings_matrix.shape[0])) #serve per il subset #'mle'.
     reduced_embeddings = pca.fit_transform(embeddings_matrix)
     df[col + '_encoded'] = [embedding.tolist() for embedding in
                             reduced_embeddings]  # Store the reduced embeddings in a single column as lists

@@ -83,6 +83,7 @@ def extract_knowledge(dataset_name, no_snapshot):
             print(f"Type of X {type(X)}; Shape of X {X.shape}")
             X_prev = torch.load(os.path.join(heterodata_prev_dir, 'features', n_type+'.pt'))
             print(f"Type of X_prev {type(X_prev)}; Shape of X_prev {X_prev.shape}")
+            #update features (X_ok)
             X_ok = torch.zeros(max_id + 1, X_prev.shape[1], dtype=X_prev.dtype)
             #X = torch.cat((X_prev, X), dim=0)
 
@@ -162,8 +163,8 @@ def extract_knowledge(dataset_name, no_snapshot):
     save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
 
 
-dataset_name = "openalex"
-snapshots = range(0,7) #0
+dataset_name = "potato_openalex"
+snapshots = range(7)
 
 for snapshot in snapshots:
     heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{snapshot}', 'heterodata')
