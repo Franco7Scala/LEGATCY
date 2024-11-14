@@ -105,7 +105,7 @@ def attributes_encoding(df, dataset_name, n_type, no_snapshot):
     df_ok = None
     #if dataset_name == "openalex":
     if "openalex" in dataset_name:
-        df = pd.read_csv(os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', f'original_data/nodes/{n_type}s.csv'))
+        #df = pd.read_csv(os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', f'original_data/nodes/{n_type}s.csv'))
         if n_type == "author":
             df_ok = df[['name', 'n_works', 'n_cit', 'impact_factor', 'h_index', 'i10_index']].copy()
             for col in df_ok.columns.tolist():
@@ -271,10 +271,12 @@ def encoding_short_text(df, col, target_dim=64):
         embeddings = embeddings.apply(replace_missing)
 
     embeddings_matrix = np.vstack(embeddings)
-    pca = PCA(n_components=min(target_dim, embeddings_matrix.shape[0])) #serve per il subset #'mle'.
-    reduced_embeddings = pca.fit_transform(embeddings_matrix)
+    #TODO per dataset intero
+    #pca = PCA(n_components=min(target_dim, embeddings_matrix.shape[0])) #serve per il subset #'mle'.
+    #reduced_embeddings = pca.fit_transform(embeddings_matrix)
+    #df[col + '_encoded'] = [embedding.tolist() for embedding in reduced_embeddings]  # Store the reduced embeddings in a single column as lists
     df[col + '_encoded'] = [embedding.tolist() for embedding in
-                            reduced_embeddings]  # Store the reduced embeddings in a single column as lists
+                            embeddings_matrix]  # Store the reduced embeddings in a single column as lists
     df.drop([col], axis=1, inplace=True)
     return df
 

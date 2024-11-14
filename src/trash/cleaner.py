@@ -2,7 +2,8 @@ import shutil
 
 
 dataset_name = "openalex"
-n_snapshot = "6"
+n_snapshot = "1"
+#
 authors_to_keep = ["A5004271128", "A5087188826", "A5062823200", "A5053183805", "A5034587660", "A5028089542", "A5038199341"] # gli ultimi due sono presenti sia nello 0 che nell'1
 #source_base_path = "/Users/francesco/Software/Python/GNN_ContinualLearning/data"
 #source_base_path = r"C:\Users\lmart\PycharmProjects\GNN_ContinualLearning\data"
@@ -11,7 +12,7 @@ source_base_path = "/mnt/nas/martirano"
 #####################################################################
 
 
-shutil.copytree(f"{source_base_path}/{dataset_name}", f"{source_base_path}/potato_{dataset_name}")
+#shutil.copytree(f"{source_base_path}/{dataset_name}", f"{source_base_path}/potato_{dataset_name}")
 
 # cleaning authors
 authors_file_paths = [f"{source_base_path}/potato_{dataset_name}/snapshot_{n_snapshot}/original_data/author_labels.csv",
@@ -32,7 +33,7 @@ for file_path in authors_file_paths:
             for word in authors_to_keep:
                 if word in line:
                     output_text += line
-
+        output_text += "\n"
     with open(file_path, "w") as file:
         file.write(output_text)
 

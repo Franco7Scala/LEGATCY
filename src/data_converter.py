@@ -164,7 +164,7 @@ def extract_knowledge(dataset_name, no_snapshot):
 
 
 dataset_name = "potato_openalex"
-snapshots = range(7)
+snapshots = range(0,2)
 
 for snapshot in snapshots:
     heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{snapshot}', 'heterodata')

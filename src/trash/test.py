@@ -5,16 +5,16 @@ import pandas as pd
 from data_utils import get_base_dir
 
 
-dataset_name = "potato_openalex"
-no_snapshot = 1
+dataset_name = "potasto_openalex"
+no_snapshot = 0
 heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', 'heterodata')
 original_data_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', 'original_data')
 
 
 authors = torch.load(os.path.join(heterodata_dir, 'features', 'authors.pt'))
-print(f"Num author nodes: {authors.shape[0]}")
+print(f"Num author nodes from tensor: {authors.shape[0]}")
 labels = torch.load(os.path.join(heterodata_dir, 'author_labels.pt'))
-print(f"Num author labels: {labels.shape[0]}")
+print(f"Num author labels from tensor: {labels.shape[0]}")
 
 
 """ check from dataframes """
