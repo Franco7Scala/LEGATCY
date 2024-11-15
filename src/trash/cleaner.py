@@ -1,18 +1,20 @@
+import os
 import shutil
 
 
 dataset_name = "openalex"
-n_snapshot = "1"
-#
+n_snapshot = "0"
+
 authors_to_keep = ["A5004271128", "A5087188826", "A5062823200", "A5053183805", "A5034587660", "A5028089542", "A5038199341"] # gli ultimi due sono presenti sia nello 0 che nell'1
 #source_base_path = "/Users/francesco/Software/Python/GNN_ContinualLearning/data"
 #source_base_path = r"C:\Users\lmart\PycharmProjects\GNN_ContinualLearning\data"
-source_base_path = "/mnt/nas/martirano"
+#source_base_path = "/mnt/nas/martirano"
+source_base_path = "/home/scala/projects/GNN_ContinualLerning/data"
 
 #####################################################################
 
-
-#shutil.copytree(f"{source_base_path}/{dataset_name}", f"{source_base_path}/potato_{dataset_name}")
+if not os.path.exists(f"{source_base_path}/potato_{dataset_name}"):
+    shutil.copytree(f"{source_base_path}/{dataset_name}", f"{source_base_path}/potato_{dataset_name}")
 
 # cleaning authors
 authors_file_paths = [f"{source_base_path}/potato_{dataset_name}/snapshot_{n_snapshot}/original_data/author_labels.csv",
