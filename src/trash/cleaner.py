@@ -35,7 +35,7 @@ for file_path in authors_file_paths:
             for word in authors_to_keep:
                 if word in line:
                     output_text += line
-        output_text += "\n"
+        #output_text += "\n"
     with open(file_path, "w") as file:
         file.write(output_text)
 

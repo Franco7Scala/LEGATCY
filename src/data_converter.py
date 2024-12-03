@@ -163,7 +163,7 @@ def extract_knowledge(dataset_name, no_snapshot):
     save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
 
 
-dataset_name = "potato_openalex"
+dataset_name = "openalex_subset"
 snapshots = range(0,2)
 
 for snapshot in snapshots:
