@@ -3,7 +3,6 @@ Solo snapshot_0 e snapshot_1
 prendo 50 autori random da snapshot_0 e la relativa rete
 prendo 30 autori da snapshot_1 t.c. 20 sono nuovi e 10 esistono anche in snapshot_0 (e la relativa rete)
 """
-from trash.cleaner import dataset_name
 
 """
 from: data > dataset_name > snapshot_i > original_data (nodes, edges)
@@ -11,18 +10,17 @@ to: data > dataset_name > snapshot_i > heterodata (features, edgelists, mapping.
 k_old_edges.pkl, K_new_edges.pkl)
 
 N.B.:
-mapping is in the form --> node_type (e.g. authors) : {str_id : id}
-K_nodes is in the form --> node_type (e.g. authors): list of ids
+mapping is in the form --> node_type (e.g. author) : {str_id : id}
+K_nodes is in the form --> node_type (e.g. author): list of ids
 K_edges is in the form --> edge_type (e.g. author_writes_paper): list of pairs (lists) of ids
 """
 
 import os
 import shutil
 import pandas as pd
-import torch
-import random
 
-from src.data_utils import open_pickle, save_dict_to_pickle, get_target_type, extract_edge_info, attributes_encoding, edges_encoding, get_base_dir
+
+from src.data_utils import  get_base_dir
 
 
 dataset_name = "openalex"
@@ -71,6 +69,8 @@ author_labels_1_subset = author_labels_1[author_labels_1['id'].isin(author_ids_1
 author_labels_0_subset.to_csv(os.path.join(subset_dir_0, 'author_labels.csv'), index=False)
 author_labels_1_subset.to_csv(os.path.join(subset_dir_1, 'author_labels.csv'), index=False)
 
+print("autori ok")
+
 # subset AI
 AI_0 = pd.read_csv(os.path.join(original_dir_0, 'edges', 'author_is_affiliated_with_institution.csv'))
 AI_1 = pd.read_csv(os.path.join(original_dir_1, 'edges', 'author_is_affiliated_with_institution.csv'))
@@ -81,6 +81,8 @@ AI_1_subset = AI_1[AI_1['src'].isin(author_ids_1_sub)]
 AI_0_subset.to_csv(os.path.join(subset_dir_0, 'edges', 'author_is_affiliated_with_institution.csv'), index=False)
 AI_1_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'author_is_affiliated_with_institution.csv'), index=False)
 
+print("AI ok")
+
 # subset IA
 IA_0 = pd.read_csv(os.path.join(original_dir_0, 'edges', 'institution_is_affiliation_of_author.csv'))
 IA_1 = pd.read_csv(os.path.join(original_dir_1, 'edges', 'institution_is_affiliation_of_author.csv'))
@@ -90,6 +92,8 @@ IA_1_subset = IA_1[IA_1['tgt'].isin(author_ids_1_sub)]
 
 IA_0_subset.to_csv(os.path.join(subset_dir_0, 'edges', 'institution_is_affiliation_of_author.csv'), index=False)
 IA_1_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'institution_is_affiliation_of_author.csv'), index=False)
+
+print("IA ok")
 
 # subset delle institutions
 institutions_0 = pd.read_csv(os.path.join(original_dir_0, 'nodes', 'institutions.csv'))
@@ -104,6 +108,8 @@ institutions_1_subset = institutions_1[institutions_1['id'].isin(institutions_id
 institutions_0_subset.to_csv(os.path.join(subset_dir_0, 'nodes', 'institutions.csv'), index=False)
 institutions_1_subset.to_csv(os.path.join(subset_dir_1, 'nodes', 'institutions.csv'), index=False)
 
+print("istituzioni ok")
+
 # subset AP
 AP_0 = pd.read_csv(os.path.join(original_dir_0, 'edges', 'author_writes_paper.csv'))
 AP_1 = pd.read_csv(os.path.join(original_dir_1, 'edges', 'author_writes_paper.csv'))
@@ -114,6 +120,8 @@ AP_1_subset = AP_1[AP_1['src'].isin(author_ids_1_sub)]
 AP_0_subset.to_csv(os.path.join(subset_dir_0, 'edges', 'author_writes_paper.csv'), index=False)
 AP_1_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'author_writes_paper.csv'), index=False)
 
+print("AP ok")
+
 # subset PA
 PA_0 = pd.read_csv(os.path.join(original_dir_0, 'edges', 'paper_is_written_by_author.csv'))
 PA_1 = pd.read_csv(os.path.join(original_dir_1, 'edges', 'paper_is_written_by_author.csv'))
@@ -123,6 +131,8 @@ PA_1_subset = PA_1[PA_1['tgt'].isin(author_ids_1_sub)]
 
 PA_0_subset.to_csv(os.path.join(subset_dir_0, 'edges', 'paper_is_written_by_author.csv'), index=False)
 PA_1_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'paper_is_written_by_author.csv'), index=False)
+
+print("PA ok")
 
 # subset dei papers
 papers_0 = pd.read_csv(os.path.join(original_dir_0, 'nodes', 'papers.csv'))
@@ -137,7 +147,9 @@ papers_1_subset = papers_1[papers_1['id'].isin(papers_ids_1_sub)]
 papers_0_subset.to_csv(os.path.join(subset_dir_0, 'nodes', 'papers.csv'), index=False)
 papers_1_subset.to_csv(os.path.join(subset_dir_1, 'nodes', 'papers.csv'), index=False)
 
-# subset PP ci lasciamo stare per ora
+print("paper ok")
+
+# subset PP
 PP_0 = pd.read_csv(os.path.join(original_dir_0, 'edges', 'paper_cites_paper.csv'))
 PP_0_rev = pd.read_csv(os.path.join(original_dir_0, 'edges', 'paper_is_cited_by_paper.csv'))
 PP_1 = pd.read_csv(os.path.join(original_dir_1, 'edges', 'paper_cites_paper.csv'))
@@ -153,5 +165,5 @@ PP_0_rev_subset.to_csv(os.path.join(subset_dir_0, 'edges', 'paper_is_cited_by_pa
 PP_1_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'paper_cites_paper.csv'), index=False)
 PP_1_rev_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'paper_is_cited_by_paper.csv'), index=False)
 
-
+print("PP ok")
 

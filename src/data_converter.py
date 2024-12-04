@@ -38,7 +38,7 @@ def extract_knowledge(dataset_name, no_snapshot):
     if no_snapshot == 0:
         mapping = {}
         for fname in os.listdir(os.path.join(original_dir, 'nodes')):
-            n_type = fname[:-4]  # remove the last 4 characters (".csv")
+            n_type = fname[:-5]  # remove the last 4 characters ("s.csv")
             f = os.path.join(original_dir, 'nodes', fname)
             df = pd.read_csv(f)
             id_column = next(col for col in df.columns if "id" in col.lower())
@@ -46,8 +46,8 @@ def extract_knowledge(dataset_name, no_snapshot):
             K_new_nodes[n_type] = list(mapping[n_type].values())
             K_old_nodes[n_type] = {}
 
-            X = attributes_encoding(df, dataset_name, n_type[:-1], no_snapshot)
-            torch.save(X, os.path.join(heterodata_dir, 'features', n_type+'.pt' ))
+            X = attributes_encoding(df, dataset_name, n_type, no_snapshot)
+            torch.save(X, os.path.join(heterodata_dir, 'features', n_type+'s.pt' ))
             #cprint(f'{n_type} features saved', Color.EXPERIMENT_STATUS_LOW_PRIORITY)
             print(f'{n_type} features saved')
 
@@ -63,7 +63,7 @@ def extract_knowledge(dataset_name, no_snapshot):
     else:
         mapping = open_pickle(os.path.join(heterodata_prev_dir, 'mapping.pkl'))
         for fname in os.listdir(os.path.join(original_dir, 'nodes')):
-            n_type = fname[:-4]  # remove the last 4 characters (".csv")
+            n_type = fname[:-5]  # remove the last 5 characters ("s.csv")
             print(f"Processing {n_type}")
             map_n_type = mapping[n_type]
             max_id = max(map_n_type.values(), default=-1)
@@ -79,9 +79,9 @@ def extract_knowledge(dataset_name, no_snapshot):
             print(f"Final max id {max_id}")
             K_old_nodes[n_type] = [id for id in mapping[n_type].values() if id not in K_new_nodes[n_type]] # add to K_old all - K_new
 
-            X = attributes_encoding(df, dataset_name, n_type[:-1], no_snapshot)
+            X = attributes_encoding(df, dataset_name, n_type, no_snapshot)
             print(f"Type of X {type(X)}; Shape of X {X.shape}")
-            X_prev = torch.load(os.path.join(heterodata_prev_dir, 'features', n_type+'.pt'))
+            X_prev = torch.load(os.path.join(heterodata_prev_dir, 'features', n_type+'s.pt'))
             print(f"Type of X_prev {type(X_prev)}; Shape of X_prev {X_prev.shape}")
             #update features (X_ok)
             X_ok = torch.zeros(max_id + 1, X_prev.shape[1], dtype=X_prev.dtype)
@@ -96,13 +96,13 @@ def extract_knowledge(dataset_name, no_snapshot):
                     # OLD: Use row from X_prev if id_str was already in map_n_type and not in df
                     X_ok[id] = X_prev[map_n_type[id_str]].cpu()
 
-            torch.save(X_ok, os.path.join(heterodata_dir, 'features', n_type + '.pt'))
+            torch.save(X_ok, os.path.join(heterodata_dir, 'features', n_type + 's.pt'))
             #cprint(f'{n_type} features saved', Color.EXPERIMENT_STATUS_LOW_PRIORITY)
             print(f'{n_type} features saved')
 
         # mapping labels
         print("mapping labels...")
-        Y_df['id'] = Y_df['id'].map(mapping[target_type + 's'])
+        Y_df['id'] = Y_df['id'].map(mapping[target_type])
         Y_df['label'] = Y_df['label'].map(mapping_labels)
         Y_prev = torch.load(os.path.join(heterodata_prev_dir, target_type + '_labels.pt'))
         Y_prev_df = pd.DataFrame({"label": Y_prev.tolist()})
@@ -133,13 +133,11 @@ def extract_knowledge(dataset_name, no_snapshot):
         edge_info = extract_edge_info(fname)
         n_type_src = edge_info[0]
         n_type_tgt = edge_info[1]
-        key_src = n_type_src + 's'
-        key_tgt = n_type_tgt + 's'
         f = os.path.join(original_dir, 'edges', fname)
         df = pd.read_csv(f, usecols=['src', 'tgt'])
         print(f"original csv shape: {df.shape}")
-        df['src'] = df['src'].map(mapping[key_src])
-        df['tgt'] = df['tgt'].map(mapping[key_tgt])
+        df['src'] = df['src'].map(mapping[n_type_src])
+        df['tgt'] = df['tgt'].map(mapping[n_type_tgt])
         K_new_edges[e_type] = df[['src', 'tgt']].values.tolist()
         Xe = edges_encoding(df=df)
         print(f"Dimension of Xe {Xe.shape}")
