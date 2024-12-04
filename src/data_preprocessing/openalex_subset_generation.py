@@ -138,8 +138,20 @@ papers_0_subset.to_csv(os.path.join(subset_dir_0, 'nodes', 'papers.csv'), index=
 papers_1_subset.to_csv(os.path.join(subset_dir_1, 'nodes', 'papers.csv'), index=False)
 
 # subset PP ci lasciamo stare per ora
+PP_0 = pd.read_csv(os.path.join(original_dir_0, 'edges', 'paper_cites_paper.csv'))
+PP_0_rev = pd.read_csv(os.path.join(original_dir_0, 'edges', 'paper_is_cited_by_paper.csv'))
+PP_1 = pd.read_csv(os.path.join(original_dir_1, 'edges', 'paper_cites_paper.csv'))
+PP_1_rev = pd.read_csv(os.path.join(original_dir_1, 'edges', 'paper_is_cited_by_paper.csv'))
 
+PP_0_subset = PP_0[(PP_0['src'].isin(papers_ids_0_sub)) & (PP_0['tgt'].isin(papers_ids_0_sub))]
+PP_0_rev_subset = PP_0_rev[(PP_0_rev['src'].isin(papers_ids_0_sub)) & (PP_0_rev['tgt'].isin(papers_ids_0_sub))]
+PP_1_subset = PP_1[(PP_1['src'].isin(papers_ids_1_sub)) & (PP_1['tgt'].isin(papers_ids_1_sub))]
+PP_1_rev_subset = PP_1_rev[(PP_1_rev['src'].isin(papers_ids_1_sub)) & (PP_1_rev['tgt'].isin(papers_ids_1_sub))]
 
+PP_0_subset.to_csv(os.path.join(subset_dir_0, 'edges', 'paper_cites_paper.csv'), index=False)
+PP_0_rev_subset.to_csv(os.path.join(subset_dir_0, 'edges', 'paper_is_cited_by_paper.csv'), index=False)
+PP_1_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'paper_cites_paper.csv'), index=False)
+PP_1_rev_subset.to_csv(os.path.join(subset_dir_1, 'edges', 'paper_is_cited_by_paper.csv'), index=False)
 
 
 

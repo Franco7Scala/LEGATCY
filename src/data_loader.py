@@ -41,9 +41,9 @@ def build_heterodata(dataset_name, no_snapshot):
 
     #print("Adding meta-paths...")
 
-    #meta-paths
-    #metapaths = get_metapaths(dataset_name)
-    #data = AddMetaPaths(metapaths, weighted=True)(data)
+    # meta-paths
+    metapaths = get_metapaths(dataset_name)
+    data = AddMetaPaths(metapaths, weighted=True)(data)
 
 
     return data

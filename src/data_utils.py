@@ -51,7 +51,7 @@ def extract_edge_info(fname):
 
 
 def get_metapaths(dataset_name):
-    if dataset_name == "openalex":
+    if "openalex" in dataset_name:
         metapaths = [[('author', 'paper'), ('paper', 'author')], #APA
              [('author', 'paper'), ('paper', 'is_cited_by', 'paper'), ('paper', 'author')], #APPA
              [('author', 'institution'), ('institution', 'author')]] #AIA

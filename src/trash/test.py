@@ -6,7 +6,7 @@ from data_utils import get_base_dir
 
 
 dataset_name = "openalex_subset"
-no_snapshot = 1
+no_snapshot = 0
 heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', 'heterodata')
 original_data_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', 'original_data')
 
