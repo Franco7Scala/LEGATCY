@@ -2,18 +2,21 @@ import os
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch_geometric.nn import to_hetero
 
+from torch_geometric.nn import to_hetero
 from src import utils
 from src.models.GAT_enhanced import GAT_enhanced
+from src.sampling_strategies.simple_enhanced_rs2 import SimpleEnhancedRS2
 from src.utils import set_random_seed, training_seeds, processing_results, compute_weights
 from src.data_utils import get_target_type
 from src.data_loader import build_heterodata, get_knowledge
 from src.trainer import train_node_classifier, eval_node_classifier
 
 
-dataset_name = "openalex"
+dataset_name = "openalex_subset"
 no_snapshot = 1 #current snapshot
+strategy = SimpleEnhancedRS2()
+
 print("Building heterodata...")
 data = build_heterodata(dataset_name=dataset_name, no_snapshot=no_snapshot)
 print("heterodata object correctly build!")
@@ -23,7 +26,6 @@ K_old_nodes, K_old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=
 target_type = get_target_type(dataset_name)
 num_classes = len(torch.unique(data[target_type].y))
 print(f"Number of classes: {num_classes}")
-strategy = "RS2"
 output_dir = os.path.join("data", dataset_name, f"snapshot_{no_snapshot}", "processed_data")
 
 l_micro = []
@@ -41,9 +43,10 @@ for run in range(len(training_seeds)):
 
     #TRAIN THE MODEL
     optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
-    weights = compute_weights(data[target_type].y).float().to(device) #torch.tensor([1.5, 1.5, 1, 1, 1, 1, 1.5, 1]).float().to(device)
-    criterion = nn.CrossEntropyLoss(weights)
-    model = train_node_classifier(model, data, K_new_nodes, K_new_edges, K_old_nodes, K_old_edges, optimizer, criterion, target_type, run, strategy, directory=output_dir, n_epochs=500)
+    criterion = nn.CrossEntropyLoss(compute_weights(data[target_type].y).float().to(device))
+    scheduler = None  # TODO
+
+    model = train_node_classifier(model, data, K_new_nodes, K_new_edges, K_old_nodes, K_old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=500)
     torch.save(model.state_dict(), os.path.join(output_dir, "model_"+str(run)+".pth"))
 
 
