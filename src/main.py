@@ -12,7 +12,7 @@ from src.data_loader import build_heterodata, get_knowledge
 from src.trainer import train_node_classifier, eval_node_classifier
 
 
-dataset_name = "openalex"
+dataset_name = "openalex_subset"
 no_snapshot = 1 #current snapshot
 print("Building heterodata...")
 data = build_heterodata(dataset_name=dataset_name, no_snapshot=no_snapshot)
