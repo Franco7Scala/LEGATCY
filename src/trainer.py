@@ -1,9 +1,8 @@
 import os
 import torch
 import numpy as np
-from sklearn.metrics import f1_score, roc_auc_score
 
-from src.data_utils import extract_heterodata_sub
+from sklearn.metrics import f1_score, roc_auc_score
 
 
 # Model training
@@ -18,6 +17,7 @@ def train_node_classifier(model, all_data, new_nodes, new_edges, old_nodes, old_
         loss = criterion(out[target_type][mask], data[target_type].y[mask])
         loss.backward()
         optimizer.step()
+        #scheduler.step()
         f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data, target_type, run, directory)
         if epoch + 1 % 20 == 0:
             print(f'Epoch: {epoch + 1:03d}, Train Loss: {loss:.3f}, Val f1_micro: {f1_micro:.3f}')

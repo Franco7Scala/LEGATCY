@@ -14,8 +14,8 @@ from src import utils
 
 
 def get_base_dir():
-    #return '/home/scala/projects/GNN_ContinualLerning/data'
-    return '/mnt/nas/martirano'  #data
+    return '/home/scala/projects/GNN_ContinualLerning/data'
+    #return '/mnt/nas/martirano'  #data
 
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
@@ -379,46 +379,3 @@ def one_hot_encoding_list(df, col, values):
     df[col + '_ohe'] = df.apply(lambda x: one_hot_encode(x[col]), axis=1)
     df.drop([col], axis=1, inplace=True)
     return df
-
-
-
-
-
-"""
-Extract a subset of the heterodata object based on a provided mask on nodes ids.
-Args --> data (Heterodata): Full dataset; mask (dict): dictionary in the form node_type: bool tensor
-Returns: --> Heterodata: New heterodata object
-"""
-def extract_heterodata_sub(data, mask):
-    data_sub = HeteroData()
-
-    # Filter nodes according to the provided mask
-    for node_type, mask in mask.items():
-        # Apply the mask to the nodes of this type
-        data_sub[node_type].x = data[node_type].x[mask]
-        # Map raw indices to new ones for edge filtering
-        index_map = torch.full((data[node_type].num_nodes,), -1, dtype=torch.long)
-        index_map[mask] = torch.arange(mask.sum().item())
-        # Store the index mapping in the filtered data
-        data_sub[node_type].index_map = index_map
-
-        # Filter edges based on the filtered nodes
-        for edge_type, edge_index in data.edge_index_dict.items():
-            # Split edge_type into (source_type, relation, target_type)
-            src_type, _, tgt_type = edge_type
-            # Apply the index map to filter edges based on valid source and target nodes
-            src_nodes = data_sub[src_type].index_map
-            tgt_nodes = data_sub[tgt_type].index_map
-            # Filter edges where both nodes exist in the subset
-            src_mask = src_nodes[edge_index[0]] != -1
-            tgt_mask = tgt_nodes[edge_index[1]] != -1
-            valid_edges = src_mask & tgt_mask
-            # Apply the mask to the edge index
-            filtered_edge_index = edge_index[:, valid_edges]
-            filtered_edge_index[0] = src_nodes[filtered_edge_index[0]]
-            filtered_edge_index[1] = tgt_nodes[filtered_edge_index[1]]
-            # Store the filtered edges in the new data object
-            data_sub[edge_type].edge_index = filtered_edge_index
-
-    return data_sub
-

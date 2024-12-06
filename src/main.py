@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch_geometric.nn import to_hetero
 from src import utils
 from src.models.GAT_enhanced import GAT_enhanced
-from src.sampling_strategies.simple_enhanced_rs2 import SimpleEnhancedRS2
+from src.sampling_strategies.basic_ers2 import BasicERS2
 from src.utils import set_random_seed, training_seeds, processing_results, compute_weights
 from src.data_utils import get_target_type
 from src.data_loader import build_heterodata, get_knowledge
@@ -15,7 +15,7 @@ from src.trainer import train_node_classifier, eval_node_classifier
 
 dataset_name = "openalex_subset"
 no_snapshot = 1 #current snapshot
-strategy = SimpleEnhancedRS2()
+strategy = BasicERS2()
 
 print("Building heterodata...")
 data = build_heterodata(dataset_name=dataset_name, no_snapshot=no_snapshot)
