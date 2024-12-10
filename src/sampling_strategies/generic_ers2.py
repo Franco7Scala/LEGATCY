@@ -13,14 +13,13 @@ class GenericERS2(AbstractStrategy):
         # iterating over all the splits to generate
         for split in range(n_split):
             sampling_mask = {}
-            # iterating over all the types of nodes
+            # taking new nodes
+            new_nodes_typed = self._select_new_nodes(split, n_split, data, new_nodes, old_nodes)
+            # taking old nodes
+            old_nodes_typed = self._select_old_nodes(split, n_split, data, new_nodes, old_nodes)
+            # adding them to the mask
             for n_type in data.x_dict:
-                # taking new nodes
-                new_nodes_typed = self._select_new_nodes(split, n_split, data, new_nodes[n_type], old_nodes[n_type])
-                # taking old nodes
-                old_nodes_typed = self._select_old_nodes(split, n_split, data, new_nodes[n_type], old_nodes[n_type])
-                # adding them to the mask
-                sampling_mask[n_type] = torch.cat((new_nodes_typed, old_nodes_typed))
+                sampling_mask[n_type] = torch.cat((new_nodes_typed[n_type], old_nodes_typed[n_type]))
 
             # applying sampling mask to the data generating a split ready for the training
             result.append(data.subgraph(sampling_mask))

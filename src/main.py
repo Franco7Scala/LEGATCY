@@ -5,7 +5,9 @@ import torch.nn as nn
 
 from torch_geometric.nn import to_hetero
 from src import utils
+from src.al_techniques.random_al_technique import RandomALTechnique
 from src.models.GAT_enhanced import GAT_enhanced
+from src.sampling_strategies.active_ers2 import ActiveERS2
 from src.sampling_strategies.basic_ers2 import BasicERS2
 from src.utils import set_random_seed, training_seeds, processing_results, compute_weights
 from src.data_utils import get_target_type
@@ -14,19 +16,21 @@ from src.trainer import train_node_classifier, eval_node_classifier
 
 
 dataset_name = "openalex_subset"
-no_snapshot = 1 #current snapshot
-strategy = BasicERS2()
+current_snapshot = 1
+n_epochs = 5
+#strategy = BasicERS2()
+strategy = ActiveERS2(RandomALTechnique(), 30)
 
 print("Building heterodata...")
-data = build_heterodata(dataset_name=dataset_name, no_snapshot=no_snapshot)
+data = build_heterodata(dataset_name=dataset_name, no_snapshot=current_snapshot)
 print("heterodata object correctly build!")
 print(data)
-K_new_nodes, K_new_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=no_snapshot, new=True)
-K_old_nodes, K_old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=no_snapshot, new=False)
+K_new_nodes, K_new_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=current_snapshot, new=True)
+K_old_nodes, K_old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=current_snapshot, new=False)
 target_type = get_target_type(dataset_name)
 num_classes = len(torch.unique(data[target_type].y))
 print(f"Number of classes: {num_classes}")
-output_dir = os.path.join("data", dataset_name, f"snapshot_{no_snapshot}", "processed_data")
+output_dir = os.path.join("data", dataset_name, f"snapshot_{current_snapshot}", "processed_data")
 
 l_micro = []
 l_macro = []
@@ -46,7 +50,7 @@ for run in range(len(training_seeds)):
     criterion = nn.CrossEntropyLoss(compute_weights(data[target_type].y).float().to(device))
     scheduler = None  # TODO
 
-    model = train_node_classifier(model, data, K_new_nodes, K_new_edges, K_old_nodes, K_old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=500)
+    model = train_node_classifier(model, data, K_new_nodes, K_new_edges, K_old_nodes, K_old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
     torch.save(model.state_dict(), os.path.join(output_dir, "model_"+str(run)+".pth"))
 
 
