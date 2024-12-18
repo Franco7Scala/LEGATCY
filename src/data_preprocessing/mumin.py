@@ -160,5 +160,13 @@ def load_mumin_heterodata():
     return data
 
 
-data = load_mumin_heterodata()
-print(data)
+def mumin_empty_dict():
+    d = {}
+    d['claim'] = []
+    d['tweet'] = []
+    d['reply'] = []
+    d['user'] = []
+    d['hashtag'] = []
+    d['article'] = []
+    d['image'] = []
+    return d
