@@ -14,8 +14,8 @@ from src import utils
 
 
 def get_base_dir():
-    return '/home/scala/projects/GNN_ContinualLerning/data'
-    #return '/mnt/nas/martirano'  #data
+    #return '/home/scala/projects/GNN_ContinualLerning/data'
+    return '/mnt/nas/martirano'  #data
 
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
@@ -75,6 +75,11 @@ def get_metapaths(dataset_name):
     else:
         raise ValueError(f"No dataset with name '{dataset_name}'")
     return metapaths
+
+
+def extract_ego_network(data, node_type, node_index):
+    subset_dict = {node_type: torch.tensor([node_index]).to(data[data.node_types[0]].x.device)}
+    return data.subgraph(subset_dict)
 
 
 def get_openalex_sub_concepts_list():

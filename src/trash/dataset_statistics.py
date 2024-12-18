@@ -21,7 +21,7 @@ def contains_main_concept(main_concept, concepts):
 if __name__ == "__main__":
     n_main_concept = 0
     n_not_main_concept = 0
-    df = pandas.read_csv(filename, usecols=["x_concepts"])
+    df = pandas.read_csv(filename,  )
     sub_concepts.append("none")
     concepts_occurrences = dict.fromkeys(sub_concepts, 0)
     for _, row in df.iterrows():
