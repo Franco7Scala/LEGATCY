@@ -33,7 +33,7 @@ device = utils.get_device()
 cprint(f"Building dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
 data = load_mumin_heterodata()
 
-target_type = get_target_type(dataset_name)
+target_type = "claim" #get_target_type(dataset_name)
 num_classes = len(torch.unique(data[target_type].y))
 
 output_dir = os.path.join("...")
@@ -55,11 +55,9 @@ for run in range(len(training_seeds)):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
     criterion = torch.nn.CrossEntropyLoss(compute_weights(data[target_type].y).float().to(device))
 
-    t_max = max(1, int(n_new + (n_old / n_epochs)) * n_epochs)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=min_lr)
     strategy = training_strategy(sampling_technique(model), k)
 
-    model = train_node_classifier_single_snapshot(model, data, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
+    model = train_node_classifier_single_snapshot(model, data, optimizer, criterion, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
     torch.save(model.state_dict(), os.path.join(output_dir, "model_" + str(run) + ".pth"))
 
     f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data, target_type, run, directory=output_dir)

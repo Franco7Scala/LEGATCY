@@ -380,3 +380,14 @@ def one_hot_encoding_list(df, col, values):
     df[col + '_ohe'] = df.apply(lambda x: one_hot_encode(x[col]), axis=1)
     df.drop([col], axis=1, inplace=True)
     return df
+
+
+
+def create_nodes_dict(data):
+    res = {}
+    for node_type in data.x_dict:
+        res[node_type] = list(range(len(data[node_type])))
+
+    return res
+
+
