@@ -77,11 +77,6 @@ def get_metapaths(dataset_name):
     return metapaths
 
 
-def extract_ego_network(data, node_type, node_index):
-    subset_dict = {node_type: torch.tensor([node_index]).to(data[data.node_types[0]].x.device)}
-    return data.subgraph(subset_dict)
-
-
 def get_openalex_sub_concepts_list():
     return ["multimedia", "database", "internet privacy", "natural language processing", "data science",
                     "artificial intelligence", "distributed computing", "computer hardware",

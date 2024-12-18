@@ -1,6 +1,5 @@
 import torch
 
-from data_utils import extract_ego_network
 from src.sampling_strategies.basic_ers2 import BasicERS2
 
 
@@ -25,8 +24,15 @@ class ActiveERS2(BasicERS2):
             # iterating over all nodes of type to calculate the score
             for j in range(data.node_stores[i]["x"].shape[0]):
                 if j in old_nodes[data.node_types[i]]:
-                    ego_net = extract_ego_network(data, data.node_types[i], j)
-                    score = self.al_technique.get_score(ego_net)
+                    subset_dict = {}
+                    for node_type in data.node_types:
+                        if node_type == data.node_types[i]:
+                            subset_dict[node_type] = torch.tensor([j]).to(torch.int).to(data[data.node_types[0]].x.device)
+
+                        else:
+                            subset_dict[node_type] = torch.tensor([]).to(torch.int).to(data[data.node_types[0]].x.device)
+
+                    score = self.al_technique.get_score(data.subgraph(subset_dict))
                     scores_nodes_of_type.append((data.node_types[i], j, score))
 
         # sorting nodes keeping index and related score
