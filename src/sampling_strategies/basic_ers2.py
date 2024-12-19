@@ -15,7 +15,7 @@ class BasicERS2(GenericERS2):
 
         return result
 
-    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes):
+    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type):
         result = {}
         for n_type in data.x_dict:
             len_split = max(int(len(old_nodes[n_type]) / tot_split), len(old_nodes[n_type]))

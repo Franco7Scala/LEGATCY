@@ -3,6 +3,7 @@ import pandas
 import torch
 
 from data_preprocessing.mumin import load_mumin_heterodata
+from data_utils import get_base_dir
 from src import utils
 from src.al_techniques.entropy_al_technique import EntropyALTechnique
 from src.al_techniques.lcs_al_technique import LCSALTechnique
@@ -36,7 +37,7 @@ data = load_mumin_heterodata()
 target_type = "claim" #get_target_type(dataset_name)
 num_classes = len(torch.unique(data[target_type].y))
 
-output_dir = os.path.join("...")
+output_dir = get_base_dir()
 
 
 l_micro = []

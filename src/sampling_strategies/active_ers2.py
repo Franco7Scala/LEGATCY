@@ -11,13 +11,13 @@ class ActiveERS2(BasicERS2):
         self.k = k
         self.splits = []
 
-    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes):
+    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type):
         if current_split == 0:
-            self._calculate_splits(tot_split, data, old_nodes)
+            self._calculate_splits(tot_split, data, old_nodes, target_type)
         
         return self.splits[current_split]
 
-    def _calculate_splits(self, tot_split, data, old_nodes):
+    def _calculate_splits(self, tot_split, data, old_nodes, target_type):
         scores_nodes_of_type = []
         # iterating over all types of nodes
         for i in range(len(data.node_stores)):
@@ -32,7 +32,7 @@ class ActiveERS2(BasicERS2):
                         else:
                             subset_dict[node_type] = torch.tensor([]).to(torch.int).to(data[data.node_types[0]].x.device)
 
-                    score = self.al_technique.get_score(data.subgraph(subset_dict).to(data[data.node_types[0]].x.device))
+                    score = self.al_technique.get_score(data.subgraph(subset_dict).to(data[data.node_types[0]].x.device), target_type)
                     scores_nodes_of_type.append((data.node_types[i], j, score))
 
         # sorting nodes keeping index and related score

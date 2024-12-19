@@ -8,7 +8,7 @@ class GenericERS2(AbstractStrategy):
     def __init__(self):
         super(GenericERS2).__init__()
 
-    def  sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges):
+    def  sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, target_type):
         result = []
         # iterating over all the splits to generate
         for split in range(n_split):
@@ -16,7 +16,7 @@ class GenericERS2(AbstractStrategy):
             # taking new nodes
             new_nodes_typed = self._select_new_nodes(split, n_split, data, new_nodes, old_nodes)
             # taking old nodes
-            old_nodes_typed = self._select_old_nodes(split, n_split, data, new_nodes, old_nodes)
+            old_nodes_typed = self._select_old_nodes(split, n_split, data, new_nodes, old_nodes, target_type)
             # adding them to the mask
             for n_type in data.x_dict:
                 sampling_mask[n_type] = torch.cat((new_nodes_typed[n_type], old_nodes_typed[n_type]))
@@ -29,5 +29,5 @@ class GenericERS2(AbstractStrategy):
     def _select_new_nodes(self, split, n_split, data, new_nodes, old_nodes):
         pass
 
-    def _select_old_nodes(self, split, n_split, data, new_nodes, old_nodes):
+    def _select_old_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type):
         pass
