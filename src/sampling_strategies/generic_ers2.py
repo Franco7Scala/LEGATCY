@@ -8,7 +8,7 @@ class GenericERS2(AbstractStrategy):
     def __init__(self):
         super(GenericERS2).__init__()
 
-    def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges):
+    def  sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges):
         result = []
         # iterating over all the splits to generate
         for split in range(n_split):

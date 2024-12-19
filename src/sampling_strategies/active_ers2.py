@@ -32,7 +32,7 @@ class ActiveERS2(BasicERS2):
                         else:
                             subset_dict[node_type] = torch.tensor([]).to(torch.int).to(data[data.node_types[0]].x.device)
 
-                    score = self.al_technique.get_score(data.subgraph(subset_dict))
+                    score = self.al_technique.get_score(data.subgraph(subset_dict).to(data[data.node_types[0]].x.device))
                     scores_nodes_of_type.append((data.node_types[i], j, score))
 
         # sorting nodes keeping index and related score

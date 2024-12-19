@@ -6,6 +6,7 @@ import torch_geometric.transforms as T
 import torch
 
 from data_utils import get_base_dir
+from utils import get_device
 
 
 def load_mumin_heterodata():
@@ -156,6 +157,8 @@ def load_mumin_heterodata():
 
     transform = T.RandomNodeSplit()
     data = transform(data)
+
+    data = data.to(get_device())
 
     return data
 

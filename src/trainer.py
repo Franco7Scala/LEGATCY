@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import f1_score, roc_auc_score
 
 from data_preprocessing.mumin import mumin_empty_dict
-from data_utils import create_nodes_dict
+from data_utils import create_nodes_dict_full, create_nodes_dict_empty
 
 
 # Model training
@@ -27,8 +27,7 @@ def train_node_classifier(model, all_data, new_nodes, new_edges, old_nodes, old_
     return model
 
 def train_node_classifier_single_snapshot(model, all_data, optimizer, criterion, target_type, run, strategy, directory, n_epochs=200):
-    empty:dict = mumin_empty_dict()
-    data_splits = strategy.sample(1, all_data, {}, {}, create_nodes_dict(all_data), {})
+    data_splits = strategy.sample(1, all_data, create_nodes_dict_empty(all_data), {}, create_nodes_dict_full(all_data), {})
 
     for epoch in range(0, n_epochs):
         model.train()

@@ -383,11 +383,17 @@ def one_hot_encoding_list(df, col, values):
 
 
 
-def create_nodes_dict(data):
+def create_nodes_dict_full(data):
     res = {}
     for node_type in data.x_dict:
         res[node_type] = list(range(len(data[node_type])))
+    return res
 
+
+def create_nodes_dict_empty(data):
+    res = {}
+    for node_type in data.x_dict:
+        res[node_type] = []
     return res
 
 
