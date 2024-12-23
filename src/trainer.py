@@ -24,21 +24,22 @@ def train_node_classifier(model, all_data, new_nodes, new_edges, old_nodes, old_
             print(f'Epoch: {epoch + 1:03d}, Train Loss: {loss:.3f}, Val f1_micro: {f1_micro:.3f}')
     return model
 
-def train_node_classifier_single_snapshot(model, all_data, optimizer, criterion, target_type, run, strategy, directory, n_epochs=200):
-    data_splits = strategy.sample(1, all_data, create_nodes_dict_empty(all_data), {}, create_nodes_dict_full(all_data), {}, target_type)
 
-    for epoch in range(0, n_epochs):
-        model.train()
-        optimizer.zero_grad()
-        data = data_splits[0]
-        out, _ = model(data.x_dict, data.edge_index_dict)
-        mask = data[target_type].train_mask
-        loss = criterion(out[target_type][mask], data[target_type].y[mask])
-        loss.backward()
-        optimizer.step()
-        f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data, target_type, run, directory)
-        if epoch + 1 % 20 == 0:
-            print(f'Epoch: {epoch + 1:03d}, Train Loss: {loss:.3f}, Val f1_micro: {f1_micro:.3f}')
+def train_node_classifier_single_snapshot(model, all_data, optimizer, criterion, target_type, run, strategy, directory, n_epochs=200, n_cycles=10):
+    for cycle in range(n_cycles):
+        data_splits = strategy.sample(1, all_data, create_nodes_dict_empty(all_data), {}, create_nodes_dict_full(all_data), {}, target_type, save=True, cycle=cycle)
+        for epoch in range(0, n_epochs):
+            model.train()
+            optimizer.zero_grad()
+            data = data_splits[0]
+            out, _ = model(data.x_dict, data.edge_index_dict)
+            mask = data[target_type].train_mask
+            loss = criterion(out[target_type][mask], data[target_type].y[mask])
+            loss.backward()
+            optimizer.step()
+            f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data, target_type, run, directory)
+            if epoch + 1 % 20 == 0:
+                print(f'Epoch: {epoch + 1:03d}, Train Loss: {loss:.3f}, Val f1_micro: {f1_micro:.3f}')
     return model
 
 

@@ -2,7 +2,7 @@ import os
 import pandas
 import torch
 
-from data_preprocessing.mumin import load_mumin_heterodata
+from src.data_preprocessing.mumin import load_mumin_heterodata
 from data_utils import get_base_dir
 from src import utils
 from src.al_techniques.entropy_al_technique import EntropyALTechnique
@@ -20,6 +20,7 @@ from torch_geometric.nn import to_hetero
 from trainer import train_node_classifier_single_snapshot
 
 dataset_name = "mumin"
+n_cycles = 5
 n_epochs = 5
 k = 10
 min_lr = 1e-4
@@ -58,7 +59,7 @@ for run in range(len(training_seeds)):
 
     strategy = training_strategy(sampling_technique(model), k)
 
-    model = train_node_classifier_single_snapshot(model, data, optimizer, criterion, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
+    model = train_node_classifier_single_snapshot(model, data, optimizer, criterion, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs, n_cycles=n_cycles)
     torch.save(model.state_dict(), os.path.join(output_dir, "model_" + str(run) + ".pth"))
 
     f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data, target_type, run, directory=output_dir)

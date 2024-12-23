@@ -10,8 +10,8 @@ from utils import get_device
 
 
 def load_mumin_heterodata():
-    nodes_dir = os.path.join(get_base_dir(), 'features')
-    edges_dir = os.path.join(get_base_dir(), 'edgelists')
+    nodes_dir = os.path.join(get_base_dir() + "/mumin", 'features')
+    edges_dir = os.path.join(get_base_dir() + "/mumin", 'edgelists')
 
     # Load node features
 
