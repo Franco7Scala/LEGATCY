@@ -10,8 +10,8 @@ from utils import get_device
 
 
 def load_mumin_heterodata():
-    nodes_dir = os.path.join(get_base_dir() + "/mumin", 'features')
-    edges_dir = os.path.join(get_base_dir() + "/mumin", 'edgelists')
+    nodes_dir = os.path.join(get_base_dir(), 'features')
+    edges_dir = os.path.join(get_base_dir(), 'edgelists')
 
     # Load node features
 
@@ -136,22 +136,28 @@ def load_mumin_heterodata():
 
     # Add metapaths # CTUTC, CTHTC
 
-    metapaths = [[('claim', 'is_discussed_by', 'tweet'),
-                  ('tweet', 'is_posted_by', 'user'),
-                  ('user', 'posted', 'tweet'),
-                  ('tweet', 'discusses', 'claim')],  # CTUTC
-                 [('claim', 'is_discussed_by', 'tweet'),
-                  ('tweet', 'has_hashtag', 'hashtag'),
-                  ('hashtag', 'is_hashtag_of', 'tweet'),
-                  ('tweet', 'discusses', 'claim')],  # CTHTC
-                 [('claim', 'is_discussed_by', 'tweet'),
-                  ('tweet', 'is_replied_by', 'reply'),
-                  ('reply', 'reply_to', 'tweet'),
-                  ('tweet', 'discusses', 'claim')],  # CTRTC_r
-                 [('claim', 'is_discussed_by', 'tweet'),
-                  ('tweet', 'is_quoted_by', 'reply'),
-                  ('reply', 'quote_of', 'tweet'),
-                  ('tweet', 'discusses', 'claim')]]  # CTRTC_q
+    metapaths = [
+                 [('user', 'retweeted', 'tweet'),
+                 ('tweet', 'is_posted_by', 'user')]
+                ]
+
+    '''metapaths = [[('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'is_posted_by', 'user'),
+                      ('user', 'posted', 'tweet'),
+                      ('tweet', 'discusses', 'claim')],  # CTUTC
+                     [('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'has_hashtag', 'hashtag'),
+                      ('hashtag', 'is_hashtag_of', 'tweet'),
+                      ('tweet', 'discusses', 'claim')],  # CTHTC
+                     [('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'is_replied_by', 'reply'),
+                      ('reply', 'reply_to', 'tweet'),
+                      ('tweet', 'discusses', 'claim')],  # CTRTC_r
+                     [('claim', 'is_discussed_by', 'tweet'),
+                      ('tweet', 'is_quoted_by', 'reply'),
+                      ('reply', 'quote_of', 'tweet'),
+                      ('tweet', 'discusses', 'claim')]]'''  # CTRTC_q
+
 
     data = AddMetaPaths(metapaths, weighted=True)(data)
 
@@ -173,3 +179,8 @@ def mumin_empty_dict():
     d['article'] = []
     d['image'] = []
     return d
+
+
+data = load_mumin_heterodata()
+print(data)
+
