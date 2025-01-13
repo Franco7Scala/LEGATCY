@@ -14,6 +14,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.transforms import AddMetaPaths
 import torch_geometric.transforms as T
 
+from data_utils import save_dict_to_pickle, open_pickle
 from utils import get_device
 
 #import emoji
@@ -197,7 +198,7 @@ print(df_N_ok.shape)
 df_N_ok = drop_columns_starting_with(df_N_ok, 'meta_data')
 print(df_N_ok.shape)
 df_N_ok['base_source'] = df_N_ok["source"].apply(lambda x: extract_base_source_news(x) if pd.notna(x) else "unknown")
-df_N_ok.drop(columns=["images", "top_img", "url", "source", "canonical_link", "news_id"], index=1, inplace=True)
+df_N_ok.drop(columns=["images", "top_img", "url", "source", "canonical_link"], index=1, inplace=True)
 print(df_N_ok.shape)
 print(df_N_ok.columns)
 df_N_ok.to_csv(os.path.join(output_dir, "original_data", "nodes", "news.csv"), index=False)
@@ -224,7 +225,7 @@ torch.save(NY, os.path.join(output_dir, "heterodata", "NY_tensor.pt"))
 df_U = pd.read_csv(os.path.join(dir_base, 'user_politifact.csv'))
 df_U_ok = drop_columns_with_many_nans(df_U)
 print(df_U_ok.shape)
-df_U_ok.drop(columns=["is_translation_enabled", "screen_name", "user_id"], index=1, inplace=True)
+df_U_ok.drop(columns=["is_translation_enabled", "screen_name"], index=1, inplace=True)
 print(df_U_ok.shape)
 print(df_U_ok.columns)
 df_U_ok.to_csv(os.path.join(output_dir, "original_data", "nodes", "user.csv"), index=False)
@@ -250,7 +251,7 @@ torch.save(UX, os.path.join(output_dir, "heterodata", "features", "UX_tensor.pt"
 """ HASHTAG """
 '''
 df_H = pd.read_csv(os.path.join(dir_base, 'hashtag_politifact.csv'))
-df_H.drop(columns=["hashtag_id"], index=1, inplace=True)
+#df_H.drop(columns=["hashtag_id"], index=1, inplace=True)
 print(df_H.shape)
 df_H.to_csv(os.path.join(output_dir, "original_data", "nodes", "hashtag.csv"), index=False)
 '''
@@ -274,17 +275,18 @@ torch.save(HX, os.path.join(output_dir, "heterodata", "features", "HX_tensor.pt"
 '''
 #df_T_ok = pd.read_csv(os.path.join(dir_base, 'tweet_embedding_politifact_with_bot.csv'))
 df_T_ok = pd.read_csv(os.path.join("/mnt/nas/scala", "tweet_embedding_politifact_with_bot.csv"))
-#print(df_T.shape)
-#df_T_ok = drop_columns_with_many_nans(df_T)
-print(df_T_ok.shape)
-df_T_ok.drop(columns=["tweet_id", "source", "Unnamed: 0"], index=1, inplace=True)
-df_T_ok.to_csv(os.path.join(output_dir, "original_data", "nodes", "tweet.csv"), index=False)
-print(df_T_ok.columns)
+#print(df_T_ok.shape)
+df_T_ok = drop_columns_with_many_nans(df_T_ok)
+#print(df_T_ok.shape)
+df_T_ok2 = df_T_ok.drop(columns=["source", "Unnamed: 0"])
+df_T_ok2.to_csv(os.path.join(output_dir, "original_data", "nodes", "tweet.csv"), index=False)
+#print(df_T_ok.colum)
 '''
+'''
+print("Processing TWEET nodes")
 
-#print("Processing TWEET nodes")
-'''
-df_T = pd.read_csv(os.path.join(output_dir, "original_data", "nodes", "tweet.csv"), )
+df_T = pd.read_csv(os.path.join(output_dir, "original_data", "nodes", "tweet.csv"))
+print(df_T.shape)
 df_T["text_emb_twhin_bert_base"] = df_T["text_emb_twhin_bert_base"].apply(convert_to_tensor)
 df_T.drop(columns = ["text"], axis=1, inplace=True)
 #df_T = encoding_short_text(df_T, "text", target_dim=384)
@@ -299,42 +301,25 @@ torch.save(TX, os.path.join(output_dir, "heterodata", "features", "TX_tensor_v2.
 '''
 
 """ EDGES """
-'''
-df_TN = pd.read_csv(os.path.join(dir_base, "tweet_discusses_news_id_politifact.csv"))
-df_TN.to_csv(os.path.join(output_dir, "original_data", "edges", "tweet_discusses_news.csv"), index=False)
-TN_tensor = edges_encoding(df_TN)
-NT_tensor = edges_rev_encoding(df_TN)
-torch.save(TN_tensor, os.path.join(output_dir, "heterodata", "edgelists", "tweet_discusses_news.pt"))
-torch.save(NT_tensor, os.path.join(output_dir, "heterodata", "edgelists", "news_is_discussed_by_tweet.pt"))
 
-df_TH = pd.read_csv(os.path.join(dir_base, "tweet_has_hashtag_id_politifact.csv"))
-df_TH.to_csv(os.path.join(output_dir, "original_data", "edges", "tweet_has_hashtag_hashtag.csv"), index=False)
-TH_tensor = edges_encoding(df_TH)
-HT_tensor = edges_rev_encoding(df_TH)
-torch.save(TH_tensor, os.path.join(output_dir, "heterodata", "edgelists", "tweet_has_hashtag_hashtag.pt"))
-torch.save(HT_tensor, os.path.join(output_dir, "heterodata", "edgelists", "hashtag_is_hashtag_of_tweet.pt"))
 
-df_UT = pd.read_csv(os.path.join(dir_base, "user_posted_tweet_id_politifact.csv"))
-df_UT.to_csv(os.path.join(output_dir, "original_data", "edges", "user_posted_tweet.csv"), index=False)
-UT_tensor = edges_encoding(df_UT)
-TU_tensor = edges_rev_encoding(df_UT)
-torch.save(UT_tensor, os.path.join(output_dir, "heterodata", "edgelists", "user_posted_tweet.pt"))
-torch.save(TU_tensor, os.path.join(output_dir, "heterodata", "edgelists", "tweet_is_posted_by_user.pt"))
 
-df_UR = pd.read_csv(os.path.join(dir_base, "user_retweeted_tweet_id_politifact.csv"))
-df_UR.to_csv(os.path.join(output_dir, "original_data", "edges", "user_retweeted_tweet.csv"), index=False)
-UR_tensor = edges_encoding(df_UR)
-RU_tensor = edges_rev_encoding(df_UR)
-torch.save(UR_tensor, os.path.join(output_dir, "heterodata", "edgelists", "user_retweeted_tweet.pt"))
-torch.save(RU_tensor, os.path.join(output_dir, "heterodata", "edgelists", "tweet_is_retweeted_by_user.pt"))
+def convert_edges_to_tensors(in_fname, out_fname1, out_fname2):
+    df = pd.read_csv(os.path.join(output_dir, "original_data", "edges", in_fname))
+    tensor = edges_encoding(df)
+    tensor_rev = edges_rev_encoding(df)
+    torch.save(tensor, os.path.join(output_dir, "heterodata", "edgelists", out_fname1))
+    torch.save(tensor_rev, os.path.join(output_dir, "heterodata", "edgelists", out_fname2))
 
-df_UU = pd.read_csv(os.path.join(dir_base, "user_mentions_user_id_politifact.csv"))
-df_UU.to_csv(os.path.join(output_dir, "original_data", "edges", "user_mentions_user.csv"), index=False)
-UU_tensor = edges_encoding(df_UU)
-UU_rev_tensor = edges_rev_encoding(df_UU)
-torch.save(UU_tensor, os.path.join(output_dir, "heterodata", "edgelists", "user_mentions_user.pt"))
-torch.save(UU_rev_tensor, os.path.join(output_dir, "heterodata", "edgelists", "user_is_mentioned_by_user.pt"))
-'''
+
+convert_edges_to_tensors("tweet_discusses_news.csv", "tweet_discusses_news.pt", "news_is_discussed_by_tweet.pt")
+convert_edges_to_tensors("tweet_has_hashtag_hashtag.csv", "tweet_has_hashtag_hashtag.pt","hashtag_is_hashtag_of_tweet.pt")
+convert_edges_to_tensors("user_posted_tweet.csv", "user_posted_tweet.pt", "tweet_is_posted_by_user.pt")
+convert_edges_to_tensors("user_retweeted_tweet.csv", "user_retweeted_tweet.pt", "tweet_is_retweeted_by_user.pt")
+convert_edges_to_tensors("user_mentions_user.csv", "user_mentions_user.pt", "user_is_mentioned_by_user.pt")
+
+
+
 
 """ Applying PCA"""
 
@@ -343,6 +328,7 @@ torch.save(UU_rev_tensor, os.path.join(output_dir, "heterodata", "edgelists", "u
 NX = torch.load(os.path.join(output_dir, "heterodata", "features", "NX_tensor.pt"))
 pca_news = PCA(n_components=dim).fit(NX)
 torch.save(torch.tensor(pca_news.transform(NX)).float(), os.path.join(output_dir, "heterodata", "features", f"NX_{dim}_tensor.pt"))
+
 TX = torch.load(os.path.join(output_dir, "heterodata", "features", "TX_tensor_v2.pt"))
 pca_tweet = PCA(n_components=dim).fit(TX)
 torch.save(torch.tensor(pca_tweet.transform(TX)).float(), os.path.join(output_dir, "heterodata", "features", f"TX_{dim}_tensor_v2.pt"))
@@ -355,6 +341,38 @@ HX = torch.load(os.path.join(output_dir, "heterodata", "features", "HX_tensor.pt
 pca_hashtag = PCA(n_components=dim).fit(HX)
 torch.save(torch.tensor(pca_hashtag.transform(HX)).float(), os.path.join(output_dir, "heterodata", "features", f"HX_{dim}_tensor.pt"))
 '''
+
+def create_mapping():
+    df_N = pd.read_csv(os.path.join(output_dir, "original_data", "nodes", "news.csv"))
+    mapping_N = df_N['news_id'].to_dict()
+    mapping_N_rev = {v: k for k, v in mapping_N.items()}
+    save_dict_to_pickle(mapping_N_rev, os.path.join(output_dir, "heterodata", "mappingN.pkl"))
+
+    df_U = pd.read_csv(os.path.join(output_dir, "original_data", "nodes", "user.csv"))
+    mapping_U = df_U['user_id'].to_dict()
+    mapping_U_rev = {v: k for k, v in mapping_U.items()}
+    save_dict_to_pickle(mapping_U_rev, os.path.join(output_dir, "heterodata", "mappingU.pkl"))
+
+    df_T = pd.read_csv(os.path.join(output_dir, "original_data", "nodes", "tweet.csv"))
+    mapping_T = df_T['tweet_id'].to_dict()
+    mapping_T_rev = {v: k for k, v in mapping_T.items()}
+    save_dict_to_pickle(mapping_T_rev, os.path.join(output_dir, "heterodata", "mappingT.pkl"))
+
+    df_H = pd.read_csv(os.path.join(output_dir, "original_data", "nodes", "hashtag.csv"))
+    mapping_H = df_H['hashtag_id'].to_dict()
+    mapping_H_rev = {v: k for k, v in mapping_H.items()}
+    save_dict_to_pickle(mapping_H_rev, os.path.join(output_dir, "heterodata", "mappingH.pkl"))
+
+
+def mapping_edges(df, mapping_src, mapping_dst):
+    df_new = pd.DataFrame(columns=df.columns)
+    df_new['src'] = df['src'].map(mapping_src)
+    df_new['tgt'] = df['tgt'].map(mapping_dst)
+    #df.drop(columns=["source", "target"], axis=1, inplace=True)
+    #df['src'] = df['src'].astype(int)
+    #df['tgt'] = df['tgt'].astype(int)
+    return df_new
+
 
 def load_politifact_heterodata():
     base_dir = "/mnt/nas/martirano/politifact_cleaned/heterodata"
@@ -420,14 +438,26 @@ def load_politifact_heterodata():
 
 
     data['user', 'mentions', 'user'].edge_index = UU_tensor
-    data['user', 'is_mentioned_by', 'user'].edge_index = UU_tensor
+    data['user', 'is_mentioned_by', 'user'].edge_index = UU_rev_tensor
 
 
     # Add metapaths # CTUTC, CTHTC
 
     metapaths = [
-                 [('user', 'retweeted', 'tweet'),
-                 ('tweet', 'is_posted_by', 'user')]
+                [('user', 'retweeted', 'tweet'),
+                 ('tweet', 'is_posted_by', 'user')],
+                [('news', 'is_discussed_by', 'tweet'),
+                ('tweet', 'is_posted_by', 'user'),
+                ('user', 'posted', 'tweet'),
+                ('tweet', 'discusses', 'news')],  # NTUTN
+                [('news', 'is_discussed_by', 'tweet'),
+                ('tweet', 'has_hashtag', 'hashtag'),
+                ('hashtag', 'is_hashtag_of', 'tweet'),
+                ('tweet', 'discusses', 'news')],  # NTHTN
+                [('news', 'is_discussed_by', 'tweet'),
+                ('tweet', 'is_posted_by', 'user'),
+                ('user', 'retweeted', 'tweet'),
+                ('tweet', 'discusses', 'news')] #NTHN_ret
                 ]
 
     '''metapaths = [[('claim', 'is_discussed_by', 'tweet'),
@@ -457,5 +487,49 @@ def load_politifact_heterodata():
 
     return data
 
+
 data = load_politifact_heterodata()
 print(data)
+
+"""
+print(torch.min(data['tweet', 'discusses', 'news'].edge_index, dim=1).values)
+print(torch.max(data['tweet', 'discusses', 'news'].edge_index, dim=1).values)
+
+print(torch.min(data['user', 'posted', 'tweet'].edge_index, dim=1).values)
+print(torch.max(data['user', 'posted', 'tweet'].edge_index, dim=1).values)
+
+print(torch.min(data['user', 'retweeted', 'tweet'].edge_index, dim=1).values)
+print(torch.max(data['user', 'retweeted', 'tweet'].edge_index, dim=1).values)
+
+print(torch.min(data['user', 'mentions', 'user'].edge_index, dim=1).values)
+print(torch.max(data['user', 'mentions', 'user'].edge_index, dim=1).values)
+"""
+
+#create_mapping()
+
+'''
+mappingN = open_pickle(os.path.join(output_dir, "heterodata", "mappingN.pkl"))
+mappingT = open_pickle(os.path.join(output_dir, "heterodata", "mappingT.pkl"))
+mappingU = open_pickle(os.path.join(output_dir, "heterodata", "mappingU.pkl"))
+mappingH = open_pickle(os.path.join(output_dir, "heterodata", "mappingH.pkl"))
+'''
+
+
+def remapping_edges(fname_in, fname_out, src_col, tgt_col, src_mapping, tgt_mapping):
+    df = pd.read_csv(os.path.join(dir_base, "file_ausiliari", fname_in))
+    df.rename(columns={src_col: "src", tgt_col: "tgt"}, inplace=True)
+    df['src'] = df['src'].map(src_mapping)
+    df['tgt'] = df['tgt'].map(tgt_mapping)
+    df = df.dropna()
+    df = df.astype({'src': 'int32', 'tgt': 'int32'})
+    #df['src'].replace(src_mapping, inplace=True)
+    #df['tgt'].replace(tgt_mapping, inplace=True)
+    df.to_csv(os.path.join(output_dir, "original_data", "edges", fname_out), index=False)
+
+'''
+remapping_edges(fname_in="tweet_discusses_news_politifact.csv", fname_out="tweet_discusses_news.csv", src_col="tweet_id", tgt_col="news_id", src_mapping=mappingT, tgt_mapping=mappingN)
+remapping_edges(fname_in="tweet_has_hashtag_politifact.csv", fname_out="tweet_has_hashtag_hashtag.csv", src_col="tweet_id", tgt_col="hashtag_id", src_mapping=mappingT, tgt_mapping=mappingH)
+remapping_edges(fname_in="user_posted_tweet_politifact.csv", fname_out="user_posted_tweet.csv", src_col="user_id", tgt_col="tweet_id", src_mapping=mappingU, tgt_mapping=mappingT)
+remapping_edges(fname_in="user_retweeted_tweet_politifact.csv", fname_out="user_retweeted_tweet.csv", src_col="user_id", tgt_col="tweet_id", src_mapping=mappingU, tgt_mapping=mappingT)
+remapping_edges(fname_in="user_mentions_user_politifact.csv", fname_out="user_mentions_user.csv", src_col="user_id", tgt_col="mentioned_user_id", src_mapping=mappingU, tgt_mapping=mappingU)
+'''
