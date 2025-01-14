@@ -8,7 +8,7 @@ class BasicERS2(GenericERS2):
     def __init__(self):
         super(BasicERS2).__init__()
 
-    def _select_new_nodes(self, current_split, tot_split, data, new_nodes, old_nodes):
+    def _select_new_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type):
         result = {}
         for n_type in data.x_dict:
             result[n_type] = torch.tensor(new_nodes[n_type]).to(data[data.node_types[0]].x.device).to(torch.int)

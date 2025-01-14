@@ -11,4 +11,4 @@ class MarginALTechnique(AbstractALTechnique):
         max_preds = preds[torch.ones(preds.shape[0], dtype=bool), preds_argmax].clone()
         preds[torch.ones(preds.shape[0], dtype=bool), preds_argmax] = -1.0
         preds_sub_argmax = torch.argmax(preds, dim=1)
-        return (max_preds - preds[torch.ones(preds.shape[0], dtype=bool), preds_sub_argmax]).cpu().detach().numpy() * -1 #TODO to remove -1 made for sociologi
+        return (max_preds - preds[torch.ones(preds.shape[0], dtype=bool), preds_sub_argmax]).cpu().detach().numpy()

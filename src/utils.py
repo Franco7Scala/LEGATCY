@@ -23,7 +23,7 @@ training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
 
 
 def get_device():
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu") #"cpu"#
 
 
 """
@@ -49,7 +49,7 @@ def compute_weights(targets):
 def process_metric(df, col):
     data = df[col]
     media = data.mean()
-    st_dev = stdev(data.tolist())
+    st_dev = stdev(data.tolist()) if len(data.tolist()) > 1 else 0
     return media, st_dev
 
 

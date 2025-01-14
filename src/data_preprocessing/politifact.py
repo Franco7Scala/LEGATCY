@@ -17,10 +17,15 @@ import torch_geometric.transforms as T
 from data_utils import save_dict_to_pickle, open_pickle
 from utils import get_device
 
+from src.data_utils import get_base_dir, get_sparse_eye, learnable_embedding
+
 #import emoji
 
+#dir_base = '/mnt/nas/guarascio/fakenews_datasets/Politifact/politifact_in_mumin_format/'
+#output_dir = "/mnt/nas/martirano/politifact_cleaned"
+
 dir_base = '/mnt/nas/guarascio/fakenews_datasets/Politifact/politifact_in_mumin_format/'
-output_dir = "/mnt/nas/martirano/politifact_cleaned"
+output_dir = "/home/scala/projects/GNN_ContinualLerning/data/politifact/"
 
 def count_nan_or_empty(series):
     #return series.apply(lambda x: pd.isna(x) or (isinstance(x, list) and len(x) == 0)).sum()
@@ -312,11 +317,11 @@ def convert_edges_to_tensors(in_fname, out_fname1, out_fname2):
     torch.save(tensor_rev, os.path.join(output_dir, "heterodata", "edgelists", out_fname2))
 
 
-convert_edges_to_tensors("tweet_discusses_news.csv", "tweet_discusses_news.pt", "news_is_discussed_by_tweet.pt")
-convert_edges_to_tensors("tweet_has_hashtag_hashtag.csv", "tweet_has_hashtag_hashtag.pt","hashtag_is_hashtag_of_tweet.pt")
-convert_edges_to_tensors("user_posted_tweet.csv", "user_posted_tweet.pt", "tweet_is_posted_by_user.pt")
-convert_edges_to_tensors("user_retweeted_tweet.csv", "user_retweeted_tweet.pt", "tweet_is_retweeted_by_user.pt")
-convert_edges_to_tensors("user_mentions_user.csv", "user_mentions_user.pt", "user_is_mentioned_by_user.pt")
+# convert_edges_to_tensors("tweet_discusses_news.csv", "tweet_discusses_news.pt", "news_is_discussed_by_tweet.pt")
+# convert_edges_to_tensors("tweet_has_hashtag_hashtag.csv", "tweet_has_hashtag_hashtag.pt","hashtag_is_hashtag_of_tweet.pt")
+# convert_edges_to_tensors("user_posted_tweet.csv", "user_posted_tweet.pt", "tweet_is_posted_by_user.pt")
+# convert_edges_to_tensors("user_retweeted_tweet.csv", "user_retweeted_tweet.pt", "tweet_is_retweeted_by_user.pt")
+# convert_edges_to_tensors("user_mentions_user.csv", "user_mentions_user.pt", "user_is_mentioned_by_user.pt")
 
 
 
@@ -375,7 +380,7 @@ def mapping_edges(df, mapping_src, mapping_dst):
 
 
 def load_politifact_heterodata():
-    base_dir = "/mnt/nas/martirano/politifact_cleaned/heterodata"
+    base_dir = get_base_dir()
     nodes_dir = os.path.join(base_dir, 'features')
     edges_dir = os.path.join(base_dir, 'edgelists')
 
@@ -480,8 +485,17 @@ def load_politifact_heterodata():
 
     data = AddMetaPaths(metapaths, weighted=True)(data)
 
-    transform = T.RandomNodeSplit()
+    # target_node = "news"
+    # num_nodes = data[target_node].x.size(0)
+    # permutation = torch.randperm(num_nodes)
+    # data[target_node].x = data[target_node].x[permutation]
+    # data[target_node].y = data[target_node].y[permutation]
+
+    n_samples = len(data["news"])
+    transform = T.RandomNodeSplit(num_val=n_samples * 0.10, num_test=n_samples * 0.15)
     data = transform(data)
+
+
 
     data = data.to(get_device())
 

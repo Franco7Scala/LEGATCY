@@ -12,7 +12,7 @@ from src.sampling_strategies.active_ers2 import ActiveERS2
 from src.utils import set_random_seed, training_seeds, processing_results, compute_weights, cprint, Color
 from src.data_utils import get_target_type
 from src.data_loader import build_heterodata, get_knowledge
-from src.trainer import train_node_classifier, eval_node_classifier
+from src.trainer import train_model, eval_model
 from torch_geometric.nn import to_hetero
 
 
@@ -68,10 +68,10 @@ for run in range(len(training_seeds)):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=min_lr)
     strategy = training_strategy(sampling_technique(model), k)
 
-    model = train_node_classifier(model, data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
+    model = train_model(model, data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
     torch.save(model.state_dict(), os.path.join(output_dir, "model_" + str(run) + ".pth"))
 
-    f1_micro, f1_macro, f1_weigh, auc = eval_node_classifier(model, data, target_type, run, directory=output_dir)
+    f1_micro, f1_macro, f1_weigh, auc = eval_model(model, data, target_type, run, directory=output_dir)
     cprint(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, f1-weighted: {f1_weigh:.3f}, roc-auc: {auc:.3f}", Color.EXPERIMENT_OUTPUT)
 
     l_micro.append(f1_micro)

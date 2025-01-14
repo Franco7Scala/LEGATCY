@@ -3,7 +3,10 @@ import pickle
 import torch
 import pandas as pd
 import numpy as np
+import scipy
 import ast
+
+from torch import nn
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
@@ -16,15 +19,34 @@ from src import utils
 def get_base_dir():
     #return '/home/scala/projects/GNN_ContinualLerning/data'
     #return '/mnt/nas/martirano'  #data
-    return '/home/martirano/data'
+   # return '/home/martirano/data'
+    return '/home/scala/projects/GNN_ContinualLerning/data/politifact/heterodata'
+    #return '/home/scala/datasets/mumin'
+    #return '/mnt/nas/martirano'  #data
+
 
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
     return pickle.load(file)
 
+
 def save_dict_to_pickle(data_dict, pckl_file):
     with open(pckl_file, 'wb') as file:
         pickle.dump(data_dict, file)
+
+
+def get_sparse_eye(size):
+    eye = scipy.sparse.eye(size)
+    coo = eye.tocoo()
+    values = coo.data
+    indices = torch.LongTensor([coo.row, coo.col])
+    i = torch.sparse.FloatTensor(indices, torch.FloatTensor(values), torch.Size([size, size]))
+    return i
+
+
+def learnable_embedding(tensor, emb_dim): 
+    emb = nn.Embedding(tensor.shape[0], emb_dim) 
+    return emb
 
 
 def get_target_type(dataset_name):
@@ -386,7 +408,7 @@ def one_hot_encoding_list(df, col, values):
 def create_nodes_dict_full(data):
     res = {}
     for node_type in data.x_dict:
-        res[node_type] = list(range(len(data[node_type])))
+        res[node_type] = list(range(len(data.x_dict[node_type])))
     return res
 
 
