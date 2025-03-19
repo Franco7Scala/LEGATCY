@@ -26,7 +26,6 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu") #"cpu"#
 
 
-
 def get_base_dir():
     #return '/home/scala/projects/GNN_ContinualLerning/data'
     #return '/mnt/nas/martirano'  #data
@@ -34,6 +33,12 @@ def get_base_dir():
     return '/home/scala/projects/GNN_ContinualLerning/data'
     #return '/home/scala/datasets/mumin'
     #return '/mnt/nas/martirano'  #data
+
+
+def count_n_snapshots(dataset_name):
+    return len([f.path for f in os.scandir(f"{get_base_dir()}/{dataset_name}") if f.is_dir() and "snapshot_" in f.name])
+
+
 
 """
 Computes weights for a multiclass classification task.

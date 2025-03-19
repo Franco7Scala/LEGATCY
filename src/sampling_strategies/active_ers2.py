@@ -36,7 +36,7 @@ class ActiveERS2(BasicERS2):
                     scores_nodes_of_type.append((data.node_types[i], j, score))
 
         # sorting nodes keeping index and related score
-        sorted_indices = sorted(range(len(scores_nodes_of_type)), key=lambda j: scores_nodes_of_type[j][2], reverse=True)
+        sorted_indices = sorted(range(len(scores_nodes_of_type)), key=lambda j: scores_nodes_of_type[j][2], reverse=False)
         scores_nodes_of_type = [scores_nodes_of_type[j] for j in sorted_indices]
         # generating splits
         selected_nodes = scores_nodes_of_type[:self.k]

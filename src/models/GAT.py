@@ -4,17 +4,41 @@ from torch_geometric.nn import Linear, to_hetero
 from torch_geometric.nn.conv import GATv2Conv
 
 
-#Questa GAT ha due layer. è pensata solo per la classificazione, perché out_channels = num_classes
 class GAT(torch.nn.Module):
-    def __init__(self, hidden_channels, out_channels, dropout=0):
+
+    def __init__(self, hidden_channels=128, out_channels=2, dropout=0, num_layers=2):
         super().__init__()
-        self.conv1 = GATv2Conv((-1, -1), hidden_channels, add_self_loops=False, dropout=dropout)
-        self.lin1 = Linear(-1, hidden_channels)
-        self.conv2 = GATv2Conv((-1, -1), out_channels, add_self_loops=False, dropout=dropout)
-        self.lin2 = Linear(-1, out_channels)
+        self.num_layers = num_layers
+
+        self.convs = torch.nn.ModuleList()
+        self.lins = torch.nn.ModuleList()
+
+        # First layer
+        self.convs.append(GATv2Conv((-1, -1), hidden_channels, add_self_loops=False, dropout=dropout))
+        self.lins.append(Linear(-1, hidden_channels))
+
+        # Intermediate layers
+        for _ in range(num_layers - 2):
+            self.convs.append(GATv2Conv((-1, -1), hidden_channels, add_self_loops=False, dropout=dropout))
+            self.lins.append(Linear(-1, hidden_channels))
+
+        # Last layer
+        self.convs.append(GATv2Conv((-1, -1), hidden_channels, add_self_loops=False, dropout=dropout))
+        self.lins.append(Linear(-1, hidden_channels))
+
+        # Final GAT layer for classification
+        self.final_conv = GATv2Conv((-1, -1), out_channels, add_self_loops=False, dropout=dropout)
+        # Final linear layer for classification
+        self.final_lin = Linear(-1, out_channels)
 
     def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index) + self.lin1(x.relu()) #self.lin1(x)
-        x = x.relu()
-        x = self.conv2(x, edge_index) + self.lin2(x.relu()) #self.lin2(x)
-        return x
+        for i in range(self.num_layers - 1):
+            x = self.convs[i](x, edge_index) + self.lins[i](x.relu())
+            x = x.relu()
+
+        # Save embeddings before the final layer
+        self.embeddings = self.convs[-1](x, edge_index) + self.lins[-1](x.relu())
+
+        # Last layer (no ReLU after the last convolution)
+        x = self.final_conv(self.embeddings, edge_index) + self.final_lin(self.embeddings.relu())
+        return x, self.embeddings
