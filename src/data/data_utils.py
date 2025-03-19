@@ -16,15 +16,6 @@ from torch_geometric.data import HeteroData
 from src import utils
 
 
-def get_base_dir():
-    #return '/home/scala/projects/GNN_ContinualLerning/data'
-    #return '/mnt/nas/martirano'  #data
-   # return '/home/martirano/data'
-    return '/home/scala/projects/GNN_ContinualLerning/data/politifact/heterodata'
-    #return '/home/scala/datasets/mumin'
-    #return '/mnt/nas/martirano'  #data
-
-
 def open_pickle(pckl_file):
     file = open(pckl_file, 'rb')
     return pickle.load(file)

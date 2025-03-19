@@ -26,6 +26,15 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu") #"cpu"#
 
 
+
+def get_base_dir():
+    #return '/home/scala/projects/GNN_ContinualLerning/data'
+    #return '/mnt/nas/martirano'  #data
+   # return '/home/martirano/data'
+    return '/home/scala/projects/GNN_ContinualLerning/data'
+    #return '/home/scala/datasets/mumin'
+    #return '/mnt/nas/martirano'  #data
+
 """
 Computes weights for a multiclass classification task.
 Args --> targets (torch.Tensor): A tensor containing the class labels.

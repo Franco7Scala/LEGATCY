@@ -13,7 +13,7 @@ import os
 import pandas as pd
 import torch
 
-from src.data_utils import open_pickle, save_dict_to_pickle, get_target_type, extract_edge_info, attributes_encoding, edges_encoding, get_base_dir
+from src.data.data_utils import open_pickle, save_dict_to_pickle, get_target_type, extract_edge_info, attributes_encoding, edges_encoding, get_base_dir
 
 
 #from src.utils import Color, cprint

@@ -20,7 +20,7 @@ import shutil
 import pandas as pd
 
 
-from src.data_utils import  get_base_dir
+from src.data.data_utils import  get_base_dir
 
 
 dataset_name = "openalex"

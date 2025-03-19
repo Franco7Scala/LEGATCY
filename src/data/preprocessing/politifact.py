@@ -14,10 +14,10 @@ from torch_geometric.data import HeteroData
 from torch_geometric.transforms import AddMetaPaths
 import torch_geometric.transforms as T
 
-from data_utils import save_dict_to_pickle, open_pickle
+from data_utils import save_dict_to_pickle
 from utils import get_device
 
-from src.data_utils import get_base_dir, get_sparse_eye, learnable_embedding
+from src.data.data_utils import get_base_dir
 
 #import emoji
 

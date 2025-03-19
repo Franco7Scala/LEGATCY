@@ -3,15 +3,12 @@ import pandas
 import torch
 
 from src import utils
-from src.al_techniques.entropy_al_technique import EntropyALTechnique
-from src.al_techniques.lcs_al_technique import LCSALTechnique
 from src.al_techniques.margin_al_technique import MarginALTechnique
-from src.al_techniques.random_al_technique import RandomALTechnique
 from src.models.GAT_enhanced import GAT_enhanced
 from src.sampling_strategies.active_ers2 import ActiveERS2
 from src.utils import set_random_seed, training_seeds, processing_results, compute_weights, cprint, Color
-from src.data_utils import get_target_type
-from src.data_loader import build_heterodata, get_knowledge
+from src.data.data_utils import get_target_type
+from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train_model, eval_model
 from torch_geometric.nn import to_hetero
 
@@ -29,6 +26,9 @@ training_strategy = ActiveERS2
 # TODO cacciare un po di stampe superflue (per Liliana che programma come uno scimpanzé)
 # TODO sistemare quel bug che fa scoppiare il training
 # TODO prendere gli score AL al contrario!
+# TODO cacciare GAT
+# TODO caccare weight a mettere AUC in eval
+# TODO aggistare GT alex
 
 ############################################################################################
 
