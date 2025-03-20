@@ -14,6 +14,7 @@ from sentence_transformers import SentenceTransformer
 from torch_geometric.data import HeteroData
 
 from src import utils
+from src.utils import get_base_dir
 
 
 def open_pickle(pckl_file):

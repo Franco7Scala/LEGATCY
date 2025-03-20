@@ -20,7 +20,6 @@ min_lr = 1e-4
 training_strategy = ActiveERS2
 sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 
-# TODO mettere la batch size (e quindi metterla pure nello scheduler)
 # TODO sistemare quel bug che fa scoppiare il training
 # TODO cacciare un po di stampe superflue (per Liliana che programma come uno scimpanzé)
 # TODO aggistare GT alex
@@ -32,7 +31,7 @@ device = utils.get_device()
 n_snapshot = count_n_snapshots(dataset_name)
 
 for snapshot in range(n_snapshot):
-    cprint(f"Working on snapshot n.{snapshot}!", Color.EXPERIMENT_CONFIG_INFO)
+    cprint(f"Working on snapshot n.{snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
     cprint(f"Building dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
     data = build_heterodata(dataset_name=dataset_name, no_snapshot=snapshot).to(device)
 
