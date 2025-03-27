@@ -47,13 +47,13 @@ Returns: --> torch.Tensor: A tensor of weights, where each weight corresponds to
 """
 def compute_weights(targets):
     total_samples = len(targets)
-    class_counts = torch.bincount(targets) # Count the occurrences of each class (assuming classes are labeled as 0, 1, 2, ..., n-1)
+    class_counts = torch.bincount(targets.to(torch.int64)) # Count the occurrences of each class (assuming classes are labeled as 0, 1, 2, ..., n-1)
     weights = total_samples / class_counts.float() # Compute weights inversely proportional to the class frequency
     weights /= weights.sum() ## Normalize the weights so they sum to 1 (optional)
 
     # Print information for debugging
     for i, count in enumerate(class_counts):
-        print(f"Number of class {i}s: {count.item()}")
+        print(f"Number of class {i}: {count.item()}")
     print(f"Computed weights: {weights}")
 
     return weights

@@ -14,7 +14,7 @@ from torch_geometric.nn import to_hetero
 
 
 dataset_name = "openalex"
-n_epochs = 5
+n_epochs = 1
 k = 10
 min_lr = 1e-4
 training_strategy = ActiveERS2

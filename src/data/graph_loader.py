@@ -31,11 +31,8 @@ def build_heterodata(dataset_name, no_snapshot):
 
     #edges
     for fname in os.listdir(os.path.join(heterodata_dir, 'edgelists')):
-        info = extract_edge_info(fname)
-        n_type_src = info[0]
-        n_type_tgt = info[1]
-        e_type = info[2]
-        edge_index = torch.load(heterodata_dir + "/edgelists/" + fname)
+        n_type_src, n_type_tgt, e_type = extract_edge_info(fname)
+        edge_index = torch.load(f"{heterodata_dir}/edgelists/{fname}")
         if edge_index.dtype == torch.float64:
             edge_index = edge_index.to(torch.int64)
         data[n_type_src, e_type, n_type_tgt].edge_index = edge_index
@@ -43,24 +40,15 @@ def build_heterodata(dataset_name, no_snapshot):
     #print("Adding meta-paths...")
 
     # meta-paths
-    metapaths = get_metapaths(dataset_name)
-    data = AddMetaPaths(metapaths, weighted=True)(data)
+    #metapaths = get_metapaths(dataset_name)
+    #data = AddMetaPaths(metapaths, weighted=True)(data) #TODO
 
 
     return data
 
 
 def get_knowledge(dataset_name, no_snapshot, new=True):
-    heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', 'heterodata')
-    if new:
-        pickle_name_nodes = 'K_new_nodes.pkl'
-        pickle_name_edges = 'K_new_edges.pkl'
-    else:
-        pickle_name_nodes = 'K_old_nodes.pkl'
-        pickle_name_edges = 'K_old_edges.pkl'
+    heterodata_dir = os.path.join(get_base_dir(), dataset_name, f"snapshot_{no_snapshot}", "heterodata")
+    pickle_name_nodes = f"K_{'new' if new else 'old'}_nodes.pkl"
+    pickle_name_edges = f"K_{'new' if new else 'old'}_edges.pkl"
     return open_pickle(os.path.join(heterodata_dir, pickle_name_nodes)), open_pickle(os.path.join(heterodata_dir, pickle_name_edges))
-
-
-
-
-

@@ -14,7 +14,7 @@ class ActiveERS2(BasicERS2):
     def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type):
         if current_split == 0:
             self._calculate_splits(tot_split, data, old_nodes, target_type)
-        
+
         return self.splits[current_split]
 
     def _calculate_splits(self, tot_split, data, old_nodes, target_type):
@@ -59,11 +59,22 @@ class ActiveERS2(BasicERS2):
                 splits.append(tensored_split)
                 current_split = self._initialize_split_dict(data)
 
-        self.splits = splits
+        if len(splits) > 0:
+            self.splits = splits
 
-    def _initialize_split_dict(self, data):
+        else:
+            self.splits = [self._initialize_split_dict(data, torch.tensor)]
+
+    def _initialize_split_dict(self, data, dtype=list):
         result = {}
         for node_type in data.node_types:
-            result[node_type] = []
+            if dtype == list:
+                result[node_type] = []
+
+            elif dtype == torch.tensor:
+                result[node_type] = torch.tensor([]).to(data[data.node_types[0]].x.device)
+
+            else:
+                raise ValueError("Type not allowed!")
 
         return result
