@@ -17,7 +17,7 @@ for i in range(7):
     for key in nodes.keys():
         nodes[key[:len(key) - 1]] = nodes.pop(key)
 
-    save_dict_to_pickle(nodes, name)
+    #save_dict_to_pickle(nodes, name)
 
 
 
