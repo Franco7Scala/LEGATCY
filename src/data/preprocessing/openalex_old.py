@@ -28,9 +28,9 @@ def split_original_data(or_dir):
         print(year)
 
         #create directory structure
-        full_path_nodes = os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data/nodes')
+        full_path_nodes = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes')
         os.makedirs(full_path_nodes, exist_ok=True)
-        full_path_edges = os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data/edges')
+        full_path_edges = os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges')
         os.makedirs(full_path_edges, exist_ok=True)
 
         papers_sub = papers.loc[papers['publication_year'] == year]
@@ -67,7 +67,7 @@ def split_original_data(or_dir):
 
         paper_cites_paper = PP_sub.copy()
         paper_cites_paper.rename(columns={'citing': 'src', 'cited':'tgt'}, inplace=True)
-        paper_cites_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data/edges/paper_cites_paper.csv'),index=False)
+        paper_cites_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_cites_paper.csv'),index=False)
 
         #check no citing of other years
         #P_year = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv'))
@@ -77,7 +77,7 @@ def split_original_data(or_dir):
 
         paper_is_cited_by_paper = PP_sub[['cited', 'citing', 'year']].copy()
         paper_is_cited_by_paper.rename(columns={'cited': 'src', 'citing': 'tgt'}, inplace=True)
-        paper_is_cited_by_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data/edges/paper_is_cited_by_paper.csv'), index=False)
+        paper_is_cited_by_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_is_cited_by_paper.csv'), index=False)
 
 
     # AP
@@ -85,18 +85,18 @@ def split_original_data(or_dir):
 
     for i,year in enumerate(years):
         print(year)
-        P_year = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data/nodes/papers.csv'))
+        P_year = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/papers.csv'))
         papers_year = P_year['id'].tolist()
         AP_sub = AP[AP['paper'].isin(papers_year)]
         print(f"AP {AP_sub.shape}")
 
         paper_is_written_by_author = AP_sub.copy()
         paper_is_written_by_author.rename(columns={'paper': 'src', 'author': 'tgt'}, inplace=True)
-        paper_is_written_by_author.to_csv(os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data/edges/paper_is_written_by_author.csv'), index=False)
+        paper_is_written_by_author.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/edges/paper_is_written_by_author.csv'), index=False)
 
         author_writes_paper = AP_sub[['author', 'paper', 'position']].copy()
         author_writes_paper.rename(columns={'author': 'src', 'paper': 'tgt'}, inplace=True)
-        author_writes_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}','original_data/edges/author_writes_paper.csv'), index=False)
+        author_writes_paper.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_writes_paper.csv'), index=False)
 
 
     # AUTHORS
@@ -105,11 +105,11 @@ def split_original_data(or_dir):
 
     for i,year in enumerate(years):
         print(year)
-        AP = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}','original_data/edges/author_writes_paper.csv'))
+        AP = pd.read_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i),'original_data/edges/author_writes_paper.csv'))
         A_year = AP['src'].drop_duplicates().tolist()
         authors_metadata_sub = authors_metadata[authors_metadata['id'].isin(A_year)]
         print(f"authors metadata {authors_metadata_sub.shape}")
-        authors_metadata_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data/nodes/authors.csv'), index=False)
+        authors_metadata_sub.to_csv(os.path.join('/mnt/nas/martirano/openalex', 'snapshot_' + str(i), 'original_data/nodes/authors.csv'), index=False)
 
     #AI
     AI = pd.read_csv(os.path.join(or_dir, 'AI.csv')) #author_id, institution_id
@@ -224,92 +224,7 @@ def filter_concepts(concepts):
     return filtered
 
 
-def correcting_data():
-    NUM_SNAPHOTS = 7
-    for i in range(NUM_SNAPHOTS):
-        dir = os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data')
-        dir_nodes = os.path.join(dir, 'nodes')
-        dir_edges = os.path.join(dir, 'edges')
-
-        # NODES
-
-        A_lab = pd.read_csv(os.path.join(dir, "author_labels.csv"))["id"].tolist()
-        A = pd.read_csv(os.path.join(dir_nodes, "authors.csv"))["id"].tolist()
-        P = pd.read_csv(os.path.join(dir_nodes, "papers.csv"))["id"].tolist()
-        I = pd.read_csv(os.path.join(dir_nodes, "institutions.csv"))["id"].tolist()
-
-        # EDGES
-
-        # authors - papers
-        AP = pd.read_csv(os.path.join(dir_edges, "author_writes_paper.csv"))
-        A_si = AP[AP["src"].isin(A)]
-        A_no = AP[~AP["src"].isin(A)] #["src"].tolist()
-        P_si = AP[AP["tgt"].isin(P)]
-        P_no = AP[~AP["tgt"].isin(P)]
-        #AP_ok = AP[~AP["src"].isin(A_no)]
-        #AP_ok.to_csv(os.path.join(dir_edges, "author_writes_paper.csv"), index=False)
-
-        PA = pd.read_csv(os.path.join(dir_edges, "paper_is_written_by_author.csv"))
-        A2_si = PA[PA["tgt"].isin(A)]
-        A2_no = PA[~PA["tgt"].isin(A)] #["tgt"].tolist()
-        P2_si = PA[PA["src"].isin(P)]
-        P2_no = PA[~PA["src"].isin(P)]
-        #PA_ok = PA[~PA["tgt"].isin(A2_no)]
-        #PA_ok.to_csv(os.path.join(dir_edges, "paper_is_written_by_author.csv"), index=False)
-
-
-        # papers - papers
-        PP = pd.read_csv(os.path.join(dir_edges, "paper_cites_paper.csv"))
-        P3_si = PP[(PP["src"].isin(P)) & (PP["tgt"].isin(P))]
-        P3_no = PP[(~PP["src"].isin(P)) | (~PP["tgt"].isin(P))]
-
-        PP_rev = pd.read_csv(os.path.join(dir_edges, "paper_is_cited_by_paper.csv"))
-        P4_si = PP_rev[(PP_rev["src"].isin(P)) & (PP_rev["tgt"].isin(P))]
-        P4_no = PP_rev[(~PP_rev["src"].isin(P)) | (~PP_rev["tgt"].isin(P))]
-
-        # authors - institutions
-        AI = pd.read_csv(os.path.join(dir_edges, "author_is_affiliated_with_institution.csv"))
-        A3_si = AI[AI["src"].isin(A)]
-        A3_no = AI[~AI["src"].isin(A)]
-        I_si = AI[AI["tgt"].isin(I)]
-        I_no = AI[~AI["tgt"].isin(I)]
-
-        IA = pd.read_csv(os.path.join(dir_edges, "institution_is_affiliation_of_author.csv"))
-        A4_si = IA[IA["tgt"].isin(A)]
-        A4_no = IA[~IA["tgt"].isin(A)]
-        I2_si = IA[IA["src"].isin(I)]
-        I2_no = IA[~IA["src"].isin(I)]
-
-        print()
-
-
-def correct_PP():
-    NUM_SNAPHOTS = 7
-    for i in range(NUM_SNAPHOTS):
-        dir = os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{i}', 'original_data')
-        dir_nodes = os.path.join(dir, 'nodes')
-        dir_edges = os.path.join(dir, 'edges')
-
-        P = pd.read_csv(os.path.join(dir_nodes, "papers.csv"))["id"].tolist()
-        for j in range(i):
-            dir_old = os.path.join('/mnt/nas/martirano/openalex', f'snapshot_{j}', 'original_data')
-            dir_old_nodes = os.path.join(dir_old, 'nodes')
-            P_old = pd.read_csv(os.path.join(dir_old_nodes, "papers.csv"))["id"].tolist()
-            P.extend(P_old)
-
-        PP = pd.read_csv(os.path.join(dir_edges, "paper_cites_paper.csv"))
-        PP_si = PP[(PP["src"].isin(P)) & (PP["tgt"].isin(P))]
-        PP_si.to_csv(os.path.join(dir_edges, "paper_cites_paper.csv"), index=False)
-
-        PP_rev = pd.read_csv(os.path.join(dir_edges, "paper_is_cited_by_paper.csv"))
-        PP_rev_si = PP_rev[(PP_rev["src"].isin(P)) & (PP_rev["tgt"].isin(P))]
-        PP_rev_si.to_csv(os.path.join(dir_edges, "paper_is_cited_by_paper.csv"), index=False)
-
-
-
 #labels_generation()
 #create_mapping_labels()
-#processing_paper_concepts()
-#correcting_data()
-correct_PP()
+processing_paper_concepts()
 

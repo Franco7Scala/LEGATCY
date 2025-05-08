@@ -14,8 +14,8 @@ def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer
         optimizer.zero_grad()
         data = data_splits[epoch]
         out, _ = model(data.x_dict, data.edge_index_dict)
-        mask = data[target_type].train_mask
-        loss = criterion(out[target_type][mask], data[target_type].y[mask])
+        #mask = data[target_type].train_mask
+        loss = criterion(out[target_type], data[target_type].y)
         loss.backward()
         optimizer.step()
         scheduler.step()

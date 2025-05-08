@@ -27,12 +27,9 @@ def get_device():
 
 
 def get_base_dir():
+    return '/mnt/nas/martirano'
     #return '/home/scala/projects/GNN_ContinualLerning/data'
-    #return '/mnt/nas/martirano'  #data
-   # return '/home/martirano/data'
-    return '/home/scala/projects/GNN_ContinualLerning/data'
     #return '/home/scala/datasets/mumin'
-    #return '/mnt/nas/martirano'  #data
 
 
 def count_n_snapshots(dataset_name):

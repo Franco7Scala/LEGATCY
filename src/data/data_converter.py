@@ -22,13 +22,13 @@ from src.data.data_utils import open_pickle, save_dict_to_pickle, get_target_typ
 def extract_knowledge(dataset_name, no_snapshot):
 
     print(f"Processing snapshot {no_snapshot}")
-    original_dir = os.path.join(get_base_dir(), dataset_name, 'snapshot_'+str(no_snapshot), 'original_data')
-    heterodata_dir = os.path.join(get_base_dir(), dataset_name, 'snapshot_'+str(no_snapshot), 'heterodata')
+    original_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', 'original_data')
+    heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{no_snapshot}', 'heterodata')
     heterodata_prev_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{(no_snapshot-1)}', 'heterodata')
 
     mapping_labels = open_pickle(os.path.join(get_base_dir(), dataset_name, 'mapping_labels.pkl'))
     target_type = get_target_type(dataset_name)
-    Y_df = pd.read_csv(os.path.join(original_dir, target_type + '_labels.csv'))
+    Y_df = pd.read_csv(os.path.join(original_dir, f'{target_type}_labels.csv'))
 
     # processing nodes +
     print("processing nodes + mapping...")
@@ -161,8 +161,8 @@ def extract_knowledge(dataset_name, no_snapshot):
     save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
 
 
-dataset_name = "openalex_subset"
-snapshots = range(0,2)
+dataset_name = "openalex"
+snapshots = range(7)
 
 for snapshot in snapshots:
     heterodata_dir = os.path.join(get_base_dir(), dataset_name, f'snapshot_{snapshot}', 'heterodata')

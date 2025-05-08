@@ -23,6 +23,7 @@ sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique Entro
 # TODO sistemare quel bug che fa scoppiare il training
 # TODO cacciare un po di stampe superflue (per Liliana che programma come uno scimpanzé)
 # TODO aggistare GT alex
+# TODO manca train-val-test mask in data
 
 ############################################################################################
 
