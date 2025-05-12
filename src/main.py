@@ -6,7 +6,7 @@ from src import utils
 from src.al_techniques.margin_al_technique import MarginALTechnique
 from src.models.GAT import GAT
 from src.sampling_strategies.active_ers2 import ActiveERS2
-from src.utils import set_random_seed, training_seeds, processing_results, compute_weights, cprint, Color, count_n_snapshots
+from src.utils import set_random_seed, training_seeds, processing_results, compute_weights, cprint, Color, count_n_snapshots, get_base_dir
 from src.data.data_utils import get_target_type
 from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train, evaluate
@@ -20,10 +20,9 @@ min_lr = 1e-4
 training_strategy = ActiveERS2
 sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 
-# TODO sistemare quel bug che fa scoppiare il training
 # TODO cacciare un po di stampe superflue (per Liliana che programma come uno scimpanzé)
 # TODO aggistare GT alex
-# TODO manca train-val-test mask in data
+# TODO controllare le cose tra cui l'if nel metodo in active_ers2
 
 ############################################################################################
 
@@ -42,7 +41,7 @@ for snapshot in range(n_snapshot):
     num_classes = len(torch.unique(data[target_type].y))
 
     cprint(f"Number of classes: {num_classes}", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
-    output_dir = os.path.join("data", dataset_name, f"snapshot_{snapshot}", "processed_data")
+    output_dir = os.path.join(get_base_dir(), dataset_name, f"snapshot_{snapshot}", "processed_data")
 
     l_micro = []
     l_macro = []

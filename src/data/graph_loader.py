@@ -5,10 +5,10 @@ to: heterodata object + mask_old, mask_new
 
 import os
 import torch
-from torch_geometric.data import HeteroData
-from torch_geometric.transforms import AddMetaPaths
 import torch_geometric.transforms as T
 
+from torch_geometric.data import HeteroData
+from torch_geometric.transforms import AddMetaPaths
 from src.data.data_utils import open_pickle, get_target_type, extract_edge_info, get_metapaths
 from src.utils import get_base_dir
 

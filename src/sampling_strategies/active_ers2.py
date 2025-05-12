@@ -23,6 +23,9 @@ class ActiveERS2(BasicERS2):
         for i in range(len(data.node_stores)):
             # iterating over all nodes of type to calculate the score
             for j in range(data.node_stores[i]["x"].shape[0]):
+                if data.node_stores[i] == target_type and not data[target_type].train_mask[j]:
+                    continue
+
                 if j in old_nodes[data.node_types[i]]:
                     subset_dict = {}
                     for node_type in data.node_types:

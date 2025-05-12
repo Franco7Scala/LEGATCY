@@ -4,6 +4,7 @@ import numpy as np
 
 from sklearn.metrics import f1_score, roc_auc_score
 from tqdm import tqdm
+from src.utils import to_categorical
 
 
 def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory, n_epochs=200):
@@ -14,8 +15,8 @@ def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer
         optimizer.zero_grad()
         data = data_splits[epoch]
         out, _ = model(data.x_dict, data.edge_index_dict)
-        #mask = data[target_type].train_mask
-        loss = criterion(out[target_type], data[target_type].y)
+        mask = data[target_type].train_mask
+        loss = criterion(out[target_type][mask], data[target_type].y[mask])
         loss.backward()
         optimizer.step()
         scheduler.step()
@@ -28,12 +29,14 @@ def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer
 def evaluate(model, data, target_type, run, directory):
     model.eval()
     with torch.no_grad():
+        mask = data[target_type].test_mask
         out, embeddings = model(data.x_dict, data.edge_index_dict)
-        pred = out[target_type].argmax(dim=-1)
-        pred_prob = torch.nn.functional.softmax(model(data.x_dict, data.edge_index_dict)[0][target_type], -1)
-        f1_micro = f1_score(data[target_type].y.cpu(), pred.cpu(), average="micro")
-        f1_macro = f1_score(data[target_type].y.cpu(), pred.cpu(), average="macro")
-        auc = roc_auc_score(data[target_type].y.cpu(), pred_prob.cpu().detach().numpy(), average="macro", multi_class="ovo")
+        pred = out[target_type][mask].argmax(dim=-1)
+        pred_prob = torch.nn.functional.softmax(model(data.x_dict, data.edge_index_dict)[0][target_type][mask], -1)
+        f1_micro = f1_score(data[target_type].y[mask].cpu(), pred.cpu(), average="micro")
+        f1_macro = f1_score(data[target_type].y[mask].cpu(), pred.cpu(), average="macro")
+        ground_truth = pred_prob.cpu().detach().numpy()
+        auc = roc_auc_score(to_categorical(data[target_type].y[mask].cpu().detach().numpy(), ground_truth.shape[1]), ground_truth, average="macro", multi_class="ovo")
         # Save embeddings for validation set
         val_embeddings = embeddings[target_type].cpu().numpy()
         np.save(os.path.join(directory, f"embeddings_{run}.npy"), val_embeddings)

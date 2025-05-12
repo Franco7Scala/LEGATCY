@@ -27,14 +27,19 @@ def get_device():
 
 
 def get_base_dir():
-    return '/mnt/nas/martirano'
-    #return '/home/scala/projects/GNN_ContinualLerning/data'
+    #return '/mnt/nas/martirano'
+    return '/home/scala/projects/GNN_ContinualLerning/data'
     #return '/home/scala/datasets/mumin'
 
 
 def count_n_snapshots(dataset_name):
     return len([f.path for f in os.scandir(f"{get_base_dir()}/{dataset_name}") if f.is_dir() and "snapshot_" in f.name])
 
+
+def to_categorical(data, n_classes):
+    result = numpy.zeros((data.size, n_classes), dtype=int)
+    result[numpy.arange(data.size), data] = 1
+    return result
 
 
 """
