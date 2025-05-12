@@ -7,6 +7,7 @@ import os
 import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.transforms import AddMetaPaths
+import torch_geometric.transforms as T
 
 from src.data.data_utils import open_pickle, get_target_type, extract_edge_info, get_metapaths
 from src.utils import get_base_dir
@@ -42,6 +43,9 @@ def build_heterodata(dataset_name, no_snapshot):
     # meta-paths
     #metapaths = get_metapaths(dataset_name)
     #data = AddMetaPaths(metapaths, weighted=True)(data) #TODO
+
+    transform = T.RandomNodeSplit(num_val=0, num_test=0.30) #train-val-test split: 70-0-30
+    data = transform(data)
 
 
     return data
