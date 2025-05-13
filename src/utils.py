@@ -7,6 +7,8 @@ import numpy
 import pandas as pd
 from statistics import stdev
 from enum import Enum
+from sklearn.preprocessing import label_binarize
+from sklearn.metrics import roc_auc_score
 
 
 class Color(Enum):
@@ -40,6 +42,13 @@ def to_categorical(data, n_classes):
     result = numpy.zeros((data.size, n_classes), dtype=int)
     result[numpy.arange(data.size), data] = 1
     return result
+
+
+def compute_auc(y_true, y_pred):
+    all_classes = numpy.arange(y_pred.shape[1])
+    scores = roc_auc_score(y_true=label_binarize(y_true, classes=all_classes), y_score=y_pred, average=None, multi_class="ovo")
+    valid_scores = scores[~numpy.isnan(scores)]
+    return numpy.mean(valid_scores)
 
 
 """
