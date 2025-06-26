@@ -2,11 +2,12 @@ import os
 import pandas
 import torch
 
-from src import utils
+from src.support import utils
 from src.al_techniques.margin_al_technique import MarginALTechnique
 from src.models.GAT import GAT
 from src.sampling_strategies.active_ers2 import ActiveERS2
-from src.utils import set_random_seed, training_seeds, processing_results, compute_weights, cprint, Color, count_n_snapshots, get_base_dir
+from src.support.focal_loss import FocalLoss
+from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir
 from src.data.data_utils import get_target_type
 from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train, evaluate
@@ -17,6 +18,7 @@ dataset_name = "openalex"
 n_epochs = 1
 k = 10
 min_lr = 1e-4
+focal_gamma = 4
 training_strategy = ActiveERS2
 sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 
@@ -31,6 +33,8 @@ device = utils.get_device()
 n_snapshot = count_n_snapshots(dataset_name)
 
 for snapshot in range(n_snapshot):
+    #if snapshot == 0:
+        #continue
     cprint(f"Working on snapshot n.{snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
     cprint(f"Building dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
     data = build_heterodata(dataset_name=dataset_name, no_snapshot=snapshot).to(device)
@@ -56,7 +60,7 @@ for snapshot in range(n_snapshot):
 
         cprint(f"Training model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
-        criterion = torch.nn.CrossEntropyLoss(compute_weights(data[target_type].y).float().to(device))
+        criterion = FocalLoss(gamma=focal_gamma, alpha=0.5, reduction="mean")
 
         n_old = sum([len(old_nodes[val]) for val in old_nodes.keys()])
         n_new = sum([len(new_nodes[val]) for val in new_nodes.keys()])

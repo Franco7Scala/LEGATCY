@@ -9,6 +9,7 @@ from statistics import stdev
 from enum import Enum
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_auc_score
+from deprecated import deprecated
 
 
 class Color(Enum):
@@ -25,7 +26,7 @@ training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
 
 
 def get_device():
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")     #"cpu"#
+    return "cpu"#torch.device("cuda" if torch.cuda.is_available() else "cpu")     #"cpu"#
 
 
 def get_base_dir():
@@ -56,6 +57,7 @@ Computes weights for a multiclass classification task.
 Args --> targets (torch.Tensor): A tensor containing the class labels.
 Returns: --> torch.Tensor: A tensor of weights, where each weight corresponds to a class.
 """
+@deprecated(reason="Skipped to focal loss!")
 def compute_weights(targets):
     total_samples = len(targets)
     class_counts = torch.bincount(targets.to(torch.int64)) # Count the occurrences of each class (assuming classes are labeled as 0, 1, 2, ..., n-1)

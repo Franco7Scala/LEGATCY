@@ -4,7 +4,7 @@ import numpy as np
 
 from sklearn.metrics import f1_score
 from tqdm import tqdm
-from src.utils import compute_auc
+from src.support.utils import compute_auc
 
 
 def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory, n_epochs=200):

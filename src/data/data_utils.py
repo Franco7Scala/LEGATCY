@@ -4,17 +4,14 @@ import torch
 import pandas as pd
 import numpy as np
 import scipy
-import ast
 
 from torch import nn
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.decomposition import PCA
 from sentence_transformers import SentenceTransformer
-from torch_geometric.data import HeteroData
 
-from src import utils
-from src.utils import get_base_dir
+from src.support import utils
+from src.support.utils import get_base_dir
 
 
 def open_pickle(pckl_file):
