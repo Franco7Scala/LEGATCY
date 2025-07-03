@@ -100,7 +100,7 @@ def get_openalex_sub_concepts_list():
 def get_ohe_types(dataset_name, n_type, col):
     values = []
     for i in range(7):
-        df = pd.read_csv(os.path.join(get_base_dir(), f"{dataset_name}/snapshot_{i}/original_data/nodes/{n_type}s.csv"))
+        df = pd.read_csv(os.path.join(get_base_dir(), f"{dataset_name}/snapshot_{i}/original_data/nodes/{n_type}.csv"))
         values.extend(df[col].fillna("unknown").drop_duplicates().tolist())
     return list(set(values))
 

@@ -30,8 +30,8 @@ def get_device():
 
 
 def get_base_dir():
-    #return '/mnt/nas/martirano'
-    return '/home/scala/projects/GNN_ContinualLerning/data'
+    return '/home/martirano/data'
+    #return '/home/scala/projects/GNN_ContinualLerning/data'
     #return '/home/scala/datasets/mumin'
 
 

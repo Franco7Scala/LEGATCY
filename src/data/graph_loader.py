@@ -19,14 +19,14 @@ def build_heterodata(dataset_name, no_snapshot):
 
     # nodes
     for fname in os.listdir(os.path.join(heterodata_dir, 'features')):
-        n_type = fname[:-4] #remove the last 4 characters ("s.pt")
+        n_type = fname[:-3] #remove the last 4 characters (".pt")
         data[n_type].x = torch.load(heterodata_dir + "/features/" + fname)
         print(f"No of nodes of type {n_type}: {data[n_type].x.shape[0]}")
 
     #ground truth for target_type
     target_type = get_target_type(dataset_name)
     data[target_type].y = torch.load(os.path.join(heterodata_dir, f'{target_type}_labels.pt'))
-    print(f"No of nodes of labels: {data[target_type].y.shape[0]}")
+    print(f"No of labels: {data[target_type].y.shape[0]}")
     print()
 
     #edges
@@ -55,3 +55,11 @@ def get_knowledge(dataset_name, no_snapshot, new=True):
     pickle_name_nodes = f"K_{'new' if new else 'old'}_nodes.pkl"
     pickle_name_edges = f"K_{'new' if new else 'old'}_edges.pkl"
     return open_pickle(os.path.join(heterodata_dir, pickle_name_nodes)), open_pickle(os.path.join(heterodata_dir, pickle_name_edges))
+
+
+if __name__ == '__main__':
+    dataset_name = "openalex"
+    NUM_SNAPSHOTS = 7
+    for s in range(NUM_SNAPSHOTS):
+        data = build_heterodata(dataset_name, s)
+        print()
