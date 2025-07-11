@@ -137,6 +137,16 @@ def split_original_data():
             os.path.join(base_dir, f'snapshot_{i}', 'original_data/author_labels.csv'),
             index=False)
 
+        #update AP/PA
+        authors_ok = pd.read_csv(os.path.join(base_dir, 'snapshot_' + str(i), 'original_data/nodes/author.csv'))
+        AP = pd.read_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/author_writes_paper.csv'))
+        AP_ok = AP[AP["src"].isin(authors_ok)]
+        AP_ok.to_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/author_writes_paper.csv'), index=False)
+        PA = pd.read_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/paper_is_written_by_author.csv'))
+        PA_ok = PA[PA["tgt"].isin(authors_ok)]
+        PA_ok.to_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/paper_is_written_by_author.csv.csv'),
+                     index=False)
+
     #AI
     print("##### Processing AI #####")
     AI = pd.read_csv(os.path.join(or_dir, 'AI.csv')) #author_id, institution_id
