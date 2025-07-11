@@ -138,6 +138,11 @@ def extract_knowledge(base_dir, no_snapshot, dataset_name):
         print(f"original csv shape: {df.shape}")
         df['src'] = df['src'].map(mapping[n_type_src])
         df['tgt'] = df['tgt'].map(mapping[n_type_tgt])
+
+        df['src'].dropna(inplace=True)
+        df['tgt'].dropna(inplace=True)
+        df = df.reset_index(drop=True)
+
         K_new_edges[e_type] = df[['src', 'tgt']].values.tolist()
         Xe = edges_encoding(df=df)
         print(f"Dimension of Xe {Xe.shape}")
@@ -157,15 +162,15 @@ def extract_knowledge(base_dir, no_snapshot, dataset_name):
         print(f'{e_type} edgelist saved')
 
     # saving K_new_edges, K_old_edges
-    save_dict_to_pickle(K_new_edges, os.path.join(heterodata_dir, 'K_new_edges.pkl'))
-    save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
+    #save_dict_to_pickle(K_new_edges, os.path.join(heterodata_dir, 'K_new_edges.pkl'))
+    #save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
 
 
 
 if __name__ == '__main__':
 
     dataset_name = "openalex"
-    base_dir = f"/home/martirano/data/{dataset_name}"
+    base_dir = f"{get_base_dir()}/{dataset_name}"
     NUM_SNAPSHOTS = range(1, 7)
 
     for snapshot in NUM_SNAPSHOTS: #STEP 3
