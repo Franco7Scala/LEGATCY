@@ -138,9 +138,16 @@ def extract_knowledge(base_dir, no_snapshot, dataset_name):
         print(f"original csv shape: {df.shape}")
         df['src'] = df['src'].map(mapping[n_type_src])
         df['tgt'] = df['tgt'].map(mapping[n_type_tgt])
+<<<<<<< HEAD
         print(f"SHAPE WITH NAN: {df.shape}")
         df = df[(df["src"].notna()) & (df["tgt"].notna())].reset_index(drop=True)
         print(f"SHAPE WITHOUT NAN: {df.shape}")
+=======
+
+        df['src'].dropna(inplace=True)
+        df['tgt'].dropna(inplace=True)
+        df = df.reset_index(drop=True)
+>>>>>>> 97dc3f87af9223953d2ecf186d4951f300086f0d
 
         K_new_edges[e_type] = df[['src', 'tgt']].values.tolist()
         Xe = edges_encoding(df=df)
@@ -169,8 +176,13 @@ def extract_knowledge(base_dir, no_snapshot, dataset_name):
 if __name__ == '__main__':
 
     dataset_name = "openalex"
+<<<<<<< HEAD
     base_dir = f"/home/martirano/data/{dataset_name}"
     NUM_SNAPSHOTS = range(7)
+=======
+    base_dir = f"{get_base_dir()}/{dataset_name}"
+    NUM_SNAPSHOTS = range(1, 7)
+>>>>>>> 97dc3f87af9223953d2ecf186d4951f300086f0d
 
     for snapshot in NUM_SNAPSHOTS: #STEP 3
         heterodata_dir = os.path.join(base_dir, f'snapshot_{snapshot}', 'heterodata')
