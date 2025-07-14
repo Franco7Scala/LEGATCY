@@ -107,7 +107,8 @@ def get_ohe_types(dataset_name, n_type, col):
 
 def edges_encoding(df):
     #print(df.dtypes)
-    return torch.tensor(df.values.T)
+    #return torch.tensor(df.values.T)
+    return torch.tensor(df.values).T
 
 
 
