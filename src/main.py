@@ -60,7 +60,7 @@ for snapshot in range(n_snapshot):
 
         cprint(f"Training model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
-        criterion = FocalLoss(gamma=focal_gamma, alpha=0.5, reduction="mean")
+        criterion = FocalLoss(num_classes=num_classes, gamma=focal_gamma, alpha=0.5, reduction="mean")
 
         n_old = sum([len(old_nodes[val]) for val in old_nodes.keys()])
         n_new = sum([len(new_nodes[val]) for val in new_nodes.keys()])

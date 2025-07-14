@@ -138,14 +138,15 @@ def split_original_data():
             index=False)
 
         #update AP/PA
-        authors_ok = pd.read_csv(os.path.join(base_dir, 'snapshot_' + str(i), 'original_data/nodes/author.csv'))
+        authors_ok = pd.read_csv(os.path.join(base_dir, 'snapshot_' + str(i), 'original_data/nodes/author.csv'))["id"]
         AP = pd.read_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/author_writes_paper.csv'))
         AP_ok = AP[AP["src"].isin(authors_ok)]
         AP_ok.to_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/author_writes_paper.csv'), index=False)
+        print(f"New AP shape: {AP_ok.shape}")
         PA = pd.read_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/paper_is_written_by_author.csv'))
         PA_ok = PA[PA["tgt"].isin(authors_ok)]
-        PA_ok.to_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/paper_is_written_by_author.csv.csv'),
-                     index=False)
+        PA_ok.to_csv(os.path.join(base_dir, f'snapshot_{i}', 'original_data/edges/paper_is_written_by_author.csv'), index=False)
+        print(f"New PA shape: {PA_ok.shape}")
 
     #AI
     print("##### Processing AI #####")
@@ -311,7 +312,7 @@ def get_new_knowledge(dataset_name, snapshot):
 
 if __name__ == "__main__":
 
-    # split_original_data() #STEP 1
-    # processing_paper_concepts() #STEP2
+    #split_original_data() #STEP 1
+    #processing_paper_concepts() #STEP2
     for i in range(7): #STEP 4
         get_new_knowledge(dataset_name, i)

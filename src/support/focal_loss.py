@@ -4,14 +4,15 @@ import torch.nn.functional as F
 
 
 class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2, reduction='mean'):
+    def __init__(self, num_classes, alpha=1, gamma=2, reduction='mean'):
         super(FocalLoss, self).__init__()
+        self.num_classes = num_classes
         self.alpha = alpha  # controls class imbalance
         self.gamma = gamma  # focuses on hard examples
         self.reduction = reduction
 
     def forward(self, inputs, targets):
-        targets = F.one_hot(targets, num_classes=2).type('torch.FloatTensor').to(inputs.device)
+        targets = F.one_hot(targets, num_classes=self.num_classes).type('torch.FloatTensor').to(inputs.device)
         # Calculate Binary Cross-Entropy Loss for each sample
         BCE_loss = nn.functional.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
 

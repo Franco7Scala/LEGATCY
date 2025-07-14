@@ -91,7 +91,7 @@ def extract_knowledge(base_dir, no_snapshot, dataset_name):
             X_prev = torch.load(os.path.join(heterodata_prev_dir, 'features', n_type+'.pt'))
             print(f"Type of X_prev {type(X_prev)}; Shape of X_prev {X_prev.shape}")
             #update features (X_ok)
-            X_delta_new = torch.zeros((max_id-ultimo_max_id_prec), X_prev.shape[1], dtype=X_prev.dtype) #TODO potrebbe saltare di uno
+            X_delta_new = torch.zeros((max_id-ultimo_max_id_prec), X_prev.shape[1], dtype=X_prev.dtype)
             X_ok = torch.cat((X_prev, X_delta_new), dim=0)
 
             if n_type == target_type:
@@ -138,6 +138,10 @@ def extract_knowledge(base_dir, no_snapshot, dataset_name):
         print(f"original csv shape: {df.shape}")
         df['src'] = df['src'].map(mapping[n_type_src])
         df['tgt'] = df['tgt'].map(mapping[n_type_tgt])
+        print(f"SHAPE WITH NAN: {df.shape}")
+        df = df[(df["src"].notna()) & (df["tgt"].notna())].reset_index(drop=True)
+        print(f"SHAPE WITHOUT NAN: {df.shape}")
+
         K_new_edges[e_type] = df[['src', 'tgt']].values.tolist()
         Xe = edges_encoding(df=df)
         print(f"Dimension of Xe {Xe.shape}")
@@ -157,8 +161,8 @@ def extract_knowledge(base_dir, no_snapshot, dataset_name):
         print(f'{e_type} edgelist saved')
 
     # saving K_new_edges, K_old_edges
-    save_dict_to_pickle(K_new_edges, os.path.join(heterodata_dir, 'K_new_edges.pkl'))
-    save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
+    #save_dict_to_pickle(K_new_edges, os.path.join(heterodata_dir, 'K_new_edges.pkl'))
+    #save_dict_to_pickle(K_old_edges, os.path.join(heterodata_dir, 'K_old_edges.pkl'))
 
 
 
@@ -166,7 +170,7 @@ if __name__ == '__main__':
 
     dataset_name = "openalex"
     base_dir = f"/home/martirano/data/{dataset_name}"
-    NUM_SNAPSHOTS = range(1, 7)
+    NUM_SNAPSHOTS = range(7)
 
     for snapshot in NUM_SNAPSHOTS: #STEP 3
         heterodata_dir = os.path.join(base_dir, f'snapshot_{snapshot}', 'heterodata')
