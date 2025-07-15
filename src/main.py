@@ -15,7 +15,7 @@ from torch_geometric.nn import to_hetero
 
 
 dataset_name = "openalex"
-n_epochs = 1
+n_epochs = 50
 k = 10
 min_lr = 1e-4
 focal_gamma = 4
@@ -23,8 +23,6 @@ training_strategy = ActiveERS2
 sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 
 # TODO cacciare un po di stampe superflue (per Liliana che programma come uno scimpanzé)
-# TODO aggistare GT alex
-# TODO controllare le cose tra cui l'if nel metodo in active_ers2
 
 ############################################################################################
 
@@ -33,8 +31,6 @@ device = utils.get_device()
 n_snapshot = count_n_snapshots(dataset_name)
 
 for snapshot in range(n_snapshot):
-    #if snapshot == 0:
-        #continue
     cprint(f"Working on snapshot n.{snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
     cprint(f"Building dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
     data = build_heterodata(dataset_name=dataset_name, no_snapshot=snapshot).to(device)

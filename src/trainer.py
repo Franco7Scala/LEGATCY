@@ -38,5 +38,6 @@ def evaluate(model, data, target_type, run, directory):
         auc = compute_auc(data[target_type].y[mask].cpu().numpy(), pred_prob.cpu().detach().numpy())
         # Save embeddings for validation set
         val_embeddings = embeddings[target_type].cpu().numpy()
+        os.makedirs(directory, exist_ok=True)
         np.save(os.path.join(directory, f"embeddings_{run}.npy"), val_embeddings)
         return f1_micro, f1_macro, auc

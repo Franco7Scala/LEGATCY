@@ -15,6 +15,9 @@ class ActiveERS2(BasicERS2):
         if current_split == 0:
             self._calculate_splits(tot_split, data, old_nodes, target_type)
 
+        if len(self.splits) <= current_split:
+            return self._initialize_split_dict(data, torch.tensor)
+
         return self.splits[current_split]
 
     def _calculate_splits(self, tot_split, data, old_nodes, target_type):
@@ -23,7 +26,7 @@ class ActiveERS2(BasicERS2):
         for i in range(len(data.node_stores)):
             # iterating over all nodes of type to calculate the score
             for j in range(data.node_stores[i]["x"].shape[0]):
-                if data.node_stores[i] == target_type and not data[target_type].train_mask[j]:
+                if data.node_types[i] == target_type and not data[target_type].train_mask[j]:
                     continue
 
                 if j in old_nodes[data.node_types[i]]:
@@ -45,7 +48,7 @@ class ActiveERS2(BasicERS2):
         selected_nodes = scores_nodes_of_type[:self.k]
         split_size = int(len(selected_nodes)/tot_split)
         splits = []
-        current_split = self._initialize_split_dict(data)
+        current_split = self._initialize_split_dict(data, torch.tensor)
         # iterating over all the selected nodes
         for i in range(len(selected_nodes)):
             current_type = selected_nodes[i][0]
