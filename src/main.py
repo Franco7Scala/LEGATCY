@@ -1,6 +1,7 @@
 import os
 import pandas
 import torch
+import warnings
 
 from src.support import utils
 from src.al_techniques.margin_al_technique import MarginALTechnique
@@ -12,6 +13,9 @@ from src.data.data_utils import get_target_type
 from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train, evaluate
 from torch_geometric.nn import to_hetero
+
+
+# python src/main.py > "/home/scala/projects/GNN_ContinualLerning/data/results/res_alex_1.log" 2>&1
 
 
 dataset_name = "openalex"
@@ -27,6 +31,7 @@ sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique Entro
 ############################################################################################
 
 
+warnings.filterwarnings("ignore")
 device = utils.get_device()
 n_snapshot = count_n_snapshots(dataset_name)
 

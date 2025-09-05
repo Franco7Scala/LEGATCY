@@ -48,7 +48,7 @@ class ActiveERS2(BasicERS2):
         selected_nodes = scores_nodes_of_type[:self.k]
         split_size = int(len(selected_nodes)/tot_split)
         splits = []
-        current_split = self._initialize_split_dict(data, torch.tensor)
+        current_split = self._initialize_split_dict(data, list)
         # iterating over all the selected nodes
         for i in range(len(selected_nodes)):
             current_type = selected_nodes[i][0]
