@@ -19,6 +19,7 @@ from torch_geometric.nn import to_hetero
 dataset_name = "openalex"
 n_epochs = 200
 k = 10
+max_lr = 0.005
 min_lr = 1e-4
 focal_gamma = 1
 training_strategy = ActiveERS2
@@ -42,6 +43,8 @@ cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
        f"- n epochs: {n_epochs}\n"
        f"- k: {k}\n"
+       f"- max lr: {max_lr}\n"
+       f"- min lr: {min_lr}\n"
        f"- focal gamma: {focal_gamma}\n"
        f"- n snapshot: {n_snapshot}\n"
        f"- Training strategy: {training_strategy.__name__}\n"
@@ -76,7 +79,7 @@ for snapshot in range(n_snapshot):
         model = to_hetero(model, data.metadata(), aggr="sum").to(device)
 
         cprint(f"Training model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
+        optimizer = torch.optim.Adam(model.parameters(), lr=max_lr, weight_decay=0.001)
         criterion = FocalLoss(num_classes=num_classes, gamma=focal_gamma, alpha=0.5, reduction="mean")
 
         n_old = sum([len(old_nodes[val]) for val in old_nodes.keys()])
