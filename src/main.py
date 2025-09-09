@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas
 import torch
 import warnings
@@ -13,9 +14,6 @@ from src.data.data_utils import get_target_type
 from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train, evaluate
 from torch_geometric.nn import to_hetero
-
-
-# python src/main.py > "/home/scala/projects/GNN_ContinualLerning/data/results/res_alex_1.log" 2>&1
 
 
 dataset_name = "openalex"
@@ -34,6 +32,21 @@ warnings.filterwarnings("ignore")
 device = utils.get_device()
 n_snapshot = count_n_snapshots(dataset_name)
 root_dir = os.path.join(get_base_dir(), dataset_name, "results", str(get_time_in_millis()))
+os.makedirs(root_dir, exist_ok=True)
+cprint(f"Saving results in '{root_dir}'", Color.EXPERIMENT_CONFIG_INFO)
+
+std_out = sys.stdout
+sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
+
+cprint(f"Experiment config:\n"
+       f"- Dataset: {dataset_name}\n"
+       f"- n epochs: {n_epochs}\n"
+       f"- k: {k}\n"
+       f"- focal gamma: {focal_gamma}\n"
+       f"- n snapshot: {n_snapshot}\n"
+       f"- Training strategy: {training_strategy.__name__}\n"
+       f"- Sampling technique: {sampling_technique.__name__}\n"
+       f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 for snapshot in range(n_snapshot):
     cprint(f"Working on snapshot n.{snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
@@ -93,4 +106,7 @@ for snapshot in range(n_snapshot):
     processing_results(data_frame).to_excel(os.path.join(output_dir, "results.xlsx"), index=False)
     cprint(f"Completed snapshot n.{snapshot}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
 
+cprint(f"Completed!", Color.OTHER)
+
+sys.stdout = std_out
 cprint(f"Completed!", Color.OTHER)
