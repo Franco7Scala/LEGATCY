@@ -9,7 +9,7 @@ from src.al_techniques.margin_al_technique import MarginALTechnique
 from src.models.GAT import GAT
 from src.sampling_strategies.active_ers2 import ActiveERS2
 from src.support.focal_loss import FocalLoss
-from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis
+from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution
 from src.data.data_utils import get_target_type
 from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train, evaluate
@@ -21,7 +21,7 @@ n_epochs = 200
 k = 10
 max_lr = 0.005
 min_lr = 1e-4
-focal_gamma = 1
+focal_gamma = 7
 training_strategy = ActiveERS2
 sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 
@@ -61,6 +61,12 @@ for snapshot in range(n_snapshot):
     target_type = get_target_type(dataset_name)
     num_classes = len(torch.unique(data[target_type].y))
 
+    class_distribution = get_class_distribution(data, target_type)
+    for i, count in enumerate(class_distribution):
+        print(f"Samples' number of class {i}: {count.item()}")
+
+    print()
+
     cprint(f"Number of classes: {num_classes}", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
     output_dir = os.path.join(root_dir, f"snapshot_{snapshot}")
     os.makedirs(output_dir, exist_ok=True)
@@ -69,6 +75,8 @@ for snapshot in range(n_snapshot):
     l_macro = []
     l_auc = []
     l_times = []
+    l_precision = []
+    l_recall = []
     for run in range(len(training_seeds)):
         start_time = get_time_in_millis()
         cprint(f"Performing run n {run} on {len(training_seeds)}...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
@@ -86,18 +94,24 @@ for snapshot in range(n_snapshot):
         n_new = sum([len(new_nodes[val]) for val in new_nodes.keys()])
         t_max = max(1, int(n_new + (n_old / n_epochs)) * n_epochs)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=min_lr)
-        strategy = training_strategy(sampling_technique(model), k)
+        if sampling_technique is None:
+            strategy = training_strategy(k)
+
+        else:
+            strategy = training_strategy(sampling_technique(model), k)
 
         model = train(model, data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
 
-        f1_micro, f1_macro, auc = evaluate(model, data, target_type, run, directory=output_dir)
+        f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, target_type, run, directory=output_dir)
         elapsed_time = get_time_in_millis() - start_time
-        cprint(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, roc-auc: {auc:.3f}, time: {elapsed_time}", Color.EXPERIMENT_OUTPUT)
+        cprint(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, roc-auc: {auc:.3f}, precision: {[{' '.join('{:.5f}'.format(x) for x in precision)}]}, recall: {[{' '.join('{:.5f}'.format(x) for x in recall)}]}, time: {elapsed_time}", Color.EXPERIMENT_OUTPUT)
 
         l_micro.append(f1_micro)
         l_macro.append(f1_macro)
         l_auc.append(auc)
+        l_precision.append(precision)
+        l_recall.append(recall)
         l_times.append(elapsed_time)
 
     cprint(f"Saving results in '{output_dir}/results.xlsx'...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)

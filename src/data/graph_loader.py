@@ -56,8 +56,6 @@ def build_heterodata(dataset_name, no_snapshot):
     transform = T.RandomNodeSplit(num_val=0, num_test=0.30) #train-val-test split: 70-0-30
     data = transform(data)
 
-    print(data)
-
 
     return data
 

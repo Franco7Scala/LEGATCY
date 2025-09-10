@@ -72,6 +72,11 @@ def compute_weights(targets):
     return weights
 
 
+def get_class_distribution(data, target_type):
+    targets = data[target_type].y
+    return torch.bincount(targets.to(torch.int64))
+
+    
 #compute mean and standard deviation for multiple runs
 def process_metric(df, col):
     data = df[col]
