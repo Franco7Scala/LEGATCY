@@ -8,6 +8,8 @@ import torch
 import torch_geometric.transforms as T
 
 from torch_geometric.data import HeteroData
+from torch_geometric.transforms import AddMetaPaths
+
 from src.data.data_utils import open_pickle, get_target_type, extract_edge_info
 from src.support.utils import get_base_dir
 
@@ -40,11 +42,21 @@ def build_heterodata(dataset_name, no_snapshot):
     #print("Adding meta-paths...")
 
     # meta-paths
-    #metapaths = get_metapaths(dataset_name)
-    #data = AddMetaPaths(metapaths, weighted=True)(data) #TODO
+    if dataset_name == "openalex":
+        metapaths = [[('author', 'writes', 'paper'),
+                      ('paper', 'is_written_by', 'author')],  # APA
+                     [('author', 'is_affiliated_with', 'institution'),
+                      ('institution', 'is_affiliation_of', 'author')], #AIA
+                     [('author', 'writes', 'paper'),
+                      ('paper', 'cites', 'paper'),
+                      ('paper', 'is_written_by', 'author')]] #APPA
+
+        data = AddMetaPaths(metapaths, weighted=True)(data)
 
     transform = T.RandomNodeSplit(num_val=0, num_test=0.30) #train-val-test split: 70-0-30
     data = transform(data)
+
+    print(data)
 
 
     return data
