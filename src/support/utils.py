@@ -10,6 +10,7 @@ from enum import Enum
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_auc_score
 from deprecated import deprecated
+from torch_geometric.nn import to_hetero
 
 
 class Color(Enum):
@@ -30,9 +31,22 @@ def get_device():
 
 
 def get_base_dir():
-    #return '/home/martirano/data'
-    return '/home/scala/projects/GNN_ContinualLerning/data'
-    #return '/home/scala/datasets/mumin'
+    return '/home/martirano/data'
+    #return '/home/scala/projects/GNN_ContinualLerning/data'
+
+
+def get_metapaths(dataset_name):
+    if dataset_name == "openalex":
+        metapaths = [[('author', 'writes', 'paper'),
+                      ('paper', 'is_written_by', 'author')],  # APA
+                     [('author', 'is_affiliated_with', 'institution'),
+                      ('institution', 'is_affiliation_of', 'author')], #AIA
+                     [('author', 'writes', 'paper'),
+                      ('paper', 'cites', 'paper'),
+                      ('paper', 'is_written_by', 'author')]] #APPA
+    else:
+        metapaths = []
+    return metapaths
 
 
 def count_n_snapshots(dataset_name):
@@ -132,3 +146,16 @@ def set_random_seed(seed):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
+
+
+def load_model(model, hidden_channels, out_channels, dropout, data, weigths_filename, device):
+    model = to_hetero(model, data.metadata(), aggr='sum')
+
+    data, model = data.to(device), model.to(device)
+
+    with torch.no_grad():
+        model.eval()
+        model(data.x_dict, data.edge_index_dict)
+        model.train()
+    model.load_state_dict(torch.load(weigths_filename))
+    return model
