@@ -6,7 +6,7 @@ from src.sampling_strategies.abstract_strategy import AbstractStrategy
 class GenericERS2(AbstractStrategy):
 
     def __init__(self):
-        super(GenericERS2).__init__()
+        super(GenericERS2, self).__init__()
 
     def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, target_type):
         result = []
