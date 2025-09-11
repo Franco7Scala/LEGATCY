@@ -148,7 +148,7 @@ def set_random_seed(seed):
     torch.backends.cudnn.benchmark = True
 
 
-def load_model(model, hidden_channels, out_channels, dropout, data, weigths_filename, device):
+def load_model(model, data, weigths_filename, device):
     model = to_hetero(model, data.metadata(), aggr='sum')
 
     data, model = data.to(device), model.to(device)
