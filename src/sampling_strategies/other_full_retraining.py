@@ -16,9 +16,12 @@ class FullRetraining(GenericERS2):
         return self._select_nodes(data, old_nodes)
 
     def _select_nodes(self, data, nodes):
-        #self._initialize_split_dict(data)
         result = {}
         for n_type in data.x_dict:
-            result[n_type] = torch.tensor(nodes[n_type]).to(data[data.node_types[0]].x.device).to(torch.int)
+            if len(nodes[n_type]) == 0:
+                result[n_type] = torch.tensor([], dtype=torch.int).to(data[data.node_types[0]].x.device)
+
+            else:
+                result[n_type] = torch.tensor(nodes[n_type]).to(data[data.node_types[0]].x.device).to(torch.int)
 
         return result

@@ -5,10 +5,14 @@ import torch
 import warnings
 
 from src.sampling_strategies.other_full_retraining import FullRetraining
-from src.support import utils
-from src.al_techniques.margin_al_technique import MarginALTechnique
-from src.models.GAT import GAT
+from src.sampling_strategies.other_online_training import OnlineTraining
 from src.sampling_strategies.active_ers2 import ActiveERS2
+from src.al_techniques.random_al_technique import RandomALTechnique
+from src.al_techniques.margin_al_technique import MarginALTechnique
+from src.al_techniques.lcs_al_technique import LCSALTechnique
+from src.al_techniques.entropy_al_technique import EntropyALTechnique
+from src.support import utils
+from src.models.GAT import GAT
 from src.support.focal_loss import FocalLoss
 from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution
 from src.data.data_utils import get_target_type
@@ -22,9 +26,9 @@ n_epochs = 1
 max_lr = 0.005
 min_lr = 1e-4
 focal_gamma = 7
-training_strategy = FullRetraining
-sampling_technique = None  # RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = None
+training_strategy = OnlineTraining  # FullRetraining OnlineTraining ActiveERS2
+sampling_technique = None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+k = None                            # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 
 
 ############################################################################################
@@ -38,7 +42,7 @@ os.makedirs(root_dir, exist_ok=True)
 cprint(f"Saving results in '{root_dir}'", Color.EXPERIMENT_CONFIG_INFO)
 
 std_out = sys.stdout
-#sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
+sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
 
 cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
