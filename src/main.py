@@ -22,11 +22,11 @@ from torch_geometric.nn import to_hetero
 
 
 dataset_name = "openalex"
-n_epochs = 1
+n_epochs = 100
 max_lr = 0.005
 min_lr = 1e-4
 focal_gamma = 7
-training_strategy = OnlineTraining  # FullRetraining OnlineTraining ActiveERS2
+training_strategy = FullRetraining  # FullRetraining OnlineTraining ActiveERS2
 sampling_technique = None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 k = None                            # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 
