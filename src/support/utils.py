@@ -45,7 +45,7 @@ def get_metapaths(dataset_name):
                       ('paper', 'cites', 'paper'),
                       ('paper', 'is_written_by', 'author')]] #APPA
     else:
-        metapaths = []
+        raise Exception("no metapaths defined for this dataset! Cretina!")
     return metapaths
 
 
