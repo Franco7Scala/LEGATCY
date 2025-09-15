@@ -35,8 +35,8 @@ def get_device():
 
 
 def get_base_dir():
-    #return '/home/martirano/data'
-    return '/home/scala/projects/GNN_ContinualLerning/data'
+    return '/home/martirano/data'
+    #return '/home/scala/projects/GNN_ContinualLerning/data'
 
 
 def get_metapaths(dataset_name):
@@ -152,14 +152,3 @@ def set_random_seed(seed):
     torch.backends.cudnn.benchmark = True
 
 
-def load_model(model, data, weigths_filename, device):
-    model = to_hetero(model, data.metadata(), aggr='sum')
-
-    data, model = data.to(device), model.to(device)
-
-    with torch.no_grad():
-        model.eval()
-        model(data.x_dict, data.edge_index_dict)
-        model.train()
-    model.load_state_dict(torch.load(weigths_filename))
-    return model
