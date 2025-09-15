@@ -6,7 +6,7 @@ from src.sampling_strategies.generic_ers2 import GenericERS2
 class BasicERS2(GenericERS2):
 
     def __init__(self):
-        super(BasicERS2).__init__()
+        super(BasicERS2, self).__init__()
 
     def _select_new_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type):
         result = {}

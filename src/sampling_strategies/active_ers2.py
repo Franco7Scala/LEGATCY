@@ -5,8 +5,8 @@ from src.sampling_strategies.basic_ers2 import BasicERS2
 
 class ActiveERS2(BasicERS2):
 
-    def __init__(self, al_technique, k):
-        super(ActiveERS2).__init__()
+    def __init__(self, k=0, al_technique=None):
+        super(ActiveERS2, self).__init__()
         self.al_technique = al_technique
         self.k = k
         self.splits = []
@@ -70,17 +70,3 @@ class ActiveERS2(BasicERS2):
 
         else:
             self.splits = [self._initialize_split_dict(data, torch.tensor)]
-
-    def _initialize_split_dict(self, data, dtype=list):
-        result = {}
-        for node_type in data.node_types:
-            if dtype == list:
-                result[node_type] = []
-
-            elif dtype == torch.tensor:
-                result[node_type] = torch.tensor([], dtype=torch.int).to(data[data.node_types[0]].x.device)
-
-            else:
-                raise ValueError("Type not allowed!")
-
-        return result

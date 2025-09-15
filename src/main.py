@@ -5,10 +5,15 @@ import torch
 from torch_geometric.explain import Explainer, CaptumExplainer
 import warnings
 
-from src.support import utils
-from src.al_techniques.margin_al_technique import MarginALTechnique
-from src.models.GAT import GAT
+from src.sampling_strategies.other_full_retraining import FullRetraining
+from src.sampling_strategies.other_online_training import OnlineTraining
 from src.sampling_strategies.active_ers2 import ActiveERS2
+from src.al_techniques.random_al_technique import RandomALTechnique
+from src.al_techniques.margin_al_technique import MarginALTechnique
+from src.al_techniques.lcs_al_technique import LCSALTechnique
+from src.al_techniques.entropy_al_technique import EntropyALTechnique
+from src.support import utils
+from src.models.GAT import GAT
 from src.support.focal_loss import FocalLoss
 from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution
 from src.data.data_utils import get_target_type
@@ -18,13 +23,13 @@ from torch_geometric.nn import to_hetero
 
 
 dataset_name = "openalex"
-n_epochs = 200
-k = 10
+n_epochs = 100
 max_lr = 0.005
 min_lr = 1e-4
 focal_gamma = 7
-training_strategy = ActiveERS2
-sampling_technique = MarginALTechnique  # RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+training_strategy = FullRetraining  # FullRetraining OnlineTraining ActiveERS2
+sampling_technique = None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+k = None                            # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 
 
 ############################################################################################
@@ -49,7 +54,7 @@ cprint(f"Experiment config:\n"
        f"- focal gamma: {focal_gamma}\n"
        f"- n snapshot: {n_snapshot}\n"
        f"- Training strategy: {training_strategy.__name__}\n"
-       f"- Sampling technique: {sampling_technique.__name__}\n"
+       f"- Sampling technique: {'None' if sampling_technique is None else sampling_technique.__name__}\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 for snapshot in range(n_snapshot):
@@ -69,6 +74,7 @@ for snapshot in range(n_snapshot):
     print()
 
     cprint(f"Number of classes: {num_classes}", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
+    previous_output_dir = os.path.join(root_dir, f"snapshot_{snapshot-1}")
     output_dir = os.path.join(root_dir, f"snapshot_{snapshot}")
     os.makedirs(output_dir, exist_ok=True)
 
@@ -80,12 +86,18 @@ for snapshot in range(n_snapshot):
     l_recall = []
     for run in range(len(training_seeds)):
         start_time = get_time_in_millis()
-        cprint(f"Performing run n {run} on {len(training_seeds)}...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+        cprint(f"Performing run n {run + 1} on {len(training_seeds)}...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         set_random_seed(training_seeds[run])
+
+        cprint(f"Initializing training strategy...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+        strategy = training_strategy()
 
         cprint(f"Building model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         model = GAT(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
         model = to_hetero(model, data.metadata(), aggr="sum").to(device)
+        if snapshot != 0 and strategy.needs_previous_model:
+            cprint(f"Loading model from previous snapshot...", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
+            model.load_state_dict(torch.load(os.path.join(previous_output_dir, f"model_{run}.pth")))
 
         cprint(f"Training model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         optimizer = torch.optim.Adam(model.parameters(), lr=max_lr, weight_decay=0.001)
@@ -95,11 +107,11 @@ for snapshot in range(n_snapshot):
         n_new = sum([len(new_nodes[val]) for val in new_nodes.keys()])
         t_max = max(1, int(n_new + (n_old / n_epochs)) * n_epochs)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=min_lr)
-        if sampling_technique is None:
-            strategy = training_strategy(k)
+        if sampling_technique is not None:
+            strategy.al_technique = sampling_technique(model)
 
-        else:
-            strategy = training_strategy(sampling_technique(model), k)
+        if k is not None:
+            strategy.k = k
 
         model = train(model, data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
