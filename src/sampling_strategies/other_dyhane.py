@@ -1,5 +1,6 @@
 from torch_geometric.data import HeteroData
 import torch
+from torch_geometric.explain import Explainer, CaptumExplainer
 from torch_geometric.nn import to_hetero
 
 from sampling_strategies.abstract_strategy import AbstractStrategy
@@ -137,6 +138,49 @@ class DyHANE(AbstractStrategy):
         return {ntype: sorted(list(ids)) for ntype, ids in node_dict.items()}
 
 
-    #TODO
-    #def _select_old_nodes():
+        def _get_explainer(model, data, target_type):
+            explainer = Explainer(
+                model=model,
+                algorithm=CaptumExplainer('IntegratedGradients'),  # InputXGradient
+                explanation_type='phenomenon',  # model's beahviour (model) vs individual predictions (phenomenon)
+                node_mask_type='attributes',
+                edge_mask_type=None,
+                model_config=dict(
+                    mode='multiclass_classification',
+                    task_level='node',
+                    return_type='probs',  # log_probs, raw
+
+                ),
+            )
+            num_target_nodes = torch.arange(data.x_dict[target_type].shape[0])
+            with torch.no_grad():
+                explainer = explainer(data.x_dict, data.edge_index_dict, target=data.y_dict[target_type], index=num_target_nodes)
+            return explainer
+
+        #TODO
+        def _select_old_nodes(old_model, old_data, target_type, B_size=768, topk=64):
+
+            old_nodes = {}
+
+            n_types = list(data.x_dict.keys())
+            percs = [0] * len(n_types)
+            explanation = _get_explainer(old_model, old_data, target_type)
+
+            # type importance, dato dalla media dei topk per ogni tipo
+            for i, nt in enumerate(n_types):
+                values, indices = torch.topk(explanation.node_mask_dict[nt].sum(-1), k=topk)
+                percs[i] = values.mean().item()
+
+            scaling_factor = B_size / sum(percs)
+            rates = [round(val * scaling_factor) for val in percs]
+
+            # top nodes for each type
+            for i, nt in enumerate(n_types):
+                values, indices = torch.topk(explanation.node_mask_dict[nt].sum(-1), k=rates[i])
+                old_nodes[nt] = indices.cpu().numpy().tolist()
+
+            return old_nodes
+
+
+
 
