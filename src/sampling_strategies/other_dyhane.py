@@ -12,7 +12,7 @@ class DyHANE(AbstractStrategy):
     def __init__(self):
         super(DyHANE).__init__()
 
-    def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, target_type):
+    def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, target_type, kwargs=None):
         result = []
         # iterating over all the splits to generate
         for split in range(n_split):

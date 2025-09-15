@@ -7,8 +7,8 @@ from tqdm import tqdm
 from src.support.utils import compute_auc
 
 
-def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory, n_epochs=200):
-    data_splits = strategy.sample(n_epochs, all_data, new_nodes, new_edges, old_nodes, old_edges, target_type)
+def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory, n_epochs=200, kwargs=None):
+    data_splits = strategy.sample(n_epochs, all_data, new_nodes, new_edges, old_nodes, old_edges, target_type, kwargs)
     progress_bar = tqdm(range(n_epochs))
     for epoch in progress_bar:
         model.train()

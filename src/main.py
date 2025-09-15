@@ -2,9 +2,9 @@ import os
 import sys
 import pandas
 import torch
-from torch_geometric.explain import Explainer, CaptumExplainer
 import warnings
 
+from torch_geometric.explain import Explainer, CaptumExplainer
 from src.sampling_strategies.other_full_retraining import FullRetraining
 from src.sampling_strategies.other_online_training import OnlineTraining
 from src.sampling_strategies.active_ers2 import ActiveERS2
@@ -15,7 +15,7 @@ from src.al_techniques.entropy_al_technique import EntropyALTechnique
 from src.support import utils
 from src.models.GAT import GAT
 from src.support.focal_loss import FocalLoss
-from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution
+from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs
 from src.data.data_utils import get_target_type
 from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train, evaluate
@@ -35,6 +35,7 @@ k = None                            # used only with ActiveERS2, it identifies t
 ############################################################################################
 
 
+kwargs = Kwargs()
 warnings.filterwarnings("ignore")
 device = utils.get_device()
 n_snapshot = count_n_snapshots(dataset_name)
@@ -59,8 +60,18 @@ cprint(f"Experiment config:\n"
 
 for snapshot in range(n_snapshot):
     cprint(f"Working on snapshot n.{snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
+
+    cprint(f"Initializing training strategy...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+    strategy = training_strategy()
+
     cprint(f"Building dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
     data = build_heterodata(dataset_name=dataset_name, no_snapshot=snapshot).to(device)
+
+    if snapshot != 0 and strategy.needs_previous_data:
+        kwargs.old_data = build_heterodata(dataset_name=dataset_name, no_snapshot=snapshot - 1).to(device)
+
+    else:
+        kwargs.old_data = None
 
     new_nodes, new_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=True)
     old_nodes, old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=False)
@@ -89,15 +100,13 @@ for snapshot in range(n_snapshot):
         cprint(f"Performing run n {run + 1} on {len(training_seeds)}...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         set_random_seed(training_seeds[run])
 
-        cprint(f"Initializing training strategy...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-        strategy = training_strategy()
-
         cprint(f"Building model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         model = GAT(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
         model = to_hetero(model, data.metadata(), aggr="sum").to(device)
         if snapshot != 0 and strategy.needs_previous_model:
             cprint(f"Loading model from previous snapshot...", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
             model.load_state_dict(torch.load(os.path.join(previous_output_dir, f"model_{run}.pth")))
+            kwargs.old_model = model
 
         cprint(f"Training model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         optimizer = torch.optim.Adam(model.parameters(), lr=max_lr, weight_decay=0.001)
@@ -113,7 +122,7 @@ for snapshot in range(n_snapshot):
         if k is not None:
             strategy.k = k
 
-        model = train(model, data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs)
+        model = train(model, data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs, kwargs=kwargs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
 
         f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, target_type, run, directory=output_dir)

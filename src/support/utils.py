@@ -23,6 +23,10 @@ class Color(Enum):
     BLACK = 8
 
 
+class Kwargs:
+    pass
+
+
 training_seeds = [123123, 34534534, 21312312, 67678678, 234234234]
 
 
