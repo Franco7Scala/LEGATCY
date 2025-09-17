@@ -24,7 +24,6 @@ contourpy==1.3.0
 cryptography==43.0.3
 cvxopt==1.3.2
 cycler==0.12.1
-declare4py @ file:///home/scala/Declare4Py
 decorator==5.1.1
 defusedxml==0.7.1
 Deprecated==1.2.18

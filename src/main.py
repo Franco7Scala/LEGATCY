@@ -15,7 +15,7 @@ from src.al_techniques.entropy_al_technique import EntropyALTechnique
 from src.support import utils
 from src.models.GAT import GAT
 from src.support.focal_loss import FocalLoss
-from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs
+from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs, compute_weights
 from src.data.data_utils import get_target_type
 from src.data.graph_loader import build_heterodata, get_knowledge
 from src.trainer import train, evaluate
@@ -23,13 +23,14 @@ from torch_geometric.nn import to_hetero
 
 
 dataset_name = "openalex"
-n_epochs = 100
+n_epochs = 1
 max_lr = 0.005
 min_lr = 1e-4
-focal_gamma = 7
-training_strategy = FullRetraining  # FullRetraining OnlineTraining ActiveERS2
-sampling_technique = None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = None                            # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
+focal_gamma = 2
+focal_alpha = 5
+training_strategy = ActiveERS2 #FullRetraining  # FullRetraining OnlineTraining ActiveERS2
+sampling_technique = MarginALTechnique#None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+k = 500#None                            # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 
 
 ############################################################################################
@@ -60,6 +61,9 @@ cprint(f"Experiment config:\n"
 
 for snapshot in range(n_snapshot):
     cprint(f"Working on snapshot n.{snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
+    subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{snapshot}")
+    os.makedirs(subgraphs_dir, exist_ok=True)
+    kwargs.subgraphs_dir = subgraphs_dir
 
     cprint(f"Initializing training strategy...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
     strategy = training_strategy()
@@ -110,7 +114,8 @@ for snapshot in range(n_snapshot):
 
         cprint(f"Training model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         optimizer = torch.optim.Adam(model.parameters(), lr=max_lr, weight_decay=0.001)
-        criterion = FocalLoss(num_classes=num_classes, gamma=focal_gamma, alpha=0.5, reduction="mean")
+        #criterion = FocalLoss(num_classes=num_classes, gamma=focal_gamma, alpha=focal_alpha, reduction="mean")
+        criterion = torch.nn.CrossEntropyLoss(compute_weights(data[target_type].y).float().to(device))
 
         n_old = sum([len(old_nodes[val]) for val in old_nodes.keys()])
         n_new = sum([len(new_nodes[val]) for val in new_nodes.keys()])

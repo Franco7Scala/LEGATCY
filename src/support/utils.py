@@ -35,8 +35,8 @@ def get_device():
 
 
 def get_base_dir():
-    return '/home/martirano/data'
-    #return '/home/scala/projects/GNN_ContinualLerning/data'
+    #return '/home/martirano/data'
+    return '/home/scala/projects/GNN_ContinualLearning/data'
 
 
 def get_metapaths(dataset_name):
@@ -152,3 +152,9 @@ def set_random_seed(seed):
     torch.backends.cudnn.benchmark = True
 
 
+def predictable_hash(text:str):
+  hash = 0
+  for ch in text:
+    hash = ( hash * 281 ^ ord(ch) * 997 ) & 0xFFFFFFFF
+
+  return hash

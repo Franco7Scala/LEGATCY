@@ -1,6 +1,8 @@
 import torch
+import os
 
 from src.sampling_strategies.basic_ers2 import BasicERS2
+from src.support.utils import predictable_hash
 
 
 class ActiveERS2(BasicERS2):
@@ -38,7 +40,8 @@ class ActiveERS2(BasicERS2):
                         else:
                             subset_dict[node_type] = torch.tensor([]).to(torch.int).to(data[data.node_types[0]].x.device)
 
-                    score = self.al_technique.get_score(data.subgraph(subset_dict).to(data[data.node_types[0]].x.device), target_type)
+                    subgraph = self._extract_subgraph(data, subset_dict)
+                    score = self.al_technique.get_score(subgraph, target_type)
                     scores_nodes_of_type.append((data.node_types[i], j, score))
 
         # sorting nodes keeping index and related score
@@ -70,3 +73,14 @@ class ActiveERS2(BasicERS2):
 
         else:
             self.splits = [self._initialize_split_dict(data, torch.tensor)]
+
+    def _extract_subgraph(self, data, subset_dict):
+        path_subgraph = f"{self.subgraphs_dir}/{predictable_hash(str(subset_dict))}.sg"
+        if os.path.exists(path_subgraph):
+            subgraph = torch.load(path_subgraph, weights_only=False)
+
+        else:
+            subgraph = data.subgraph(subset_dict).to(data[data.node_types[0]].x.device)
+            torch.save(subgraph, path_subgraph)
+
+        return subgraph
