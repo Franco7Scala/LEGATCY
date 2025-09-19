@@ -21,7 +21,7 @@ class DyHANE(AbstractStrategy):
             metapaths = data.mps
             new_nodes_typed = self._select_new_nodes(data, new_edges, metapaths)
             # taking old nodes
-            old_nodes_typed = self._select_old_nodes(old_model, old_data, target_type)
+            old_nodes_typed = self._select_old_nodes(kwargs.old_model, kwargs.old_data, target_type)
             # adding them to the mask
             for n_type in data.x_dict:
                 sampling_mask[n_type] = torch.cat(

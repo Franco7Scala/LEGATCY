@@ -5,6 +5,8 @@ import torch
 import warnings
 
 from torch_geometric.explain import Explainer, CaptumExplainer
+
+from models.HeteroGAT import HeteroGAT
 from src.sampling_strategies.other_full_retraining import FullRetraining
 from src.sampling_strategies.other_online_training import OnlineTraining
 from src.sampling_strategies.active_ers2 import ActiveERS2
@@ -105,8 +107,22 @@ for snapshot in range(n_snapshot):
         set_random_seed(training_seeds[run])
 
         cprint(f"Building model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-        model = GAT(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
-        model = to_hetero(model, data.metadata(), aggr="sum").to(device)
+
+        # OLD version using to_hetero wrapper on the GAT model
+        #model = GAT(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
+        #model = to_hetero(model, data.metadata(), aggr="sum").to(device)
+        #out, emb = model(data.x_dict, data.edge_index_dict)
+
+        #NEW version using directly HeteroGAT with HeteroConv
+        model = HeteroGAT(
+            metadata=data.metadata(),
+            hidden_channels=64,
+            out_channels=num_classes,
+            dropout=0.4,
+            num_layers=3
+        ).to(device)
+        out_dict, emb_dict = model(data.x_dict, data.edge_index_dict)
+
         if snapshot != 0 and strategy.needs_previous_model:
             cprint(f"Loading model from previous snapshot...", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
             model.load_state_dict(torch.load(os.path.join(previous_output_dir, f"model_{run}.pth")))

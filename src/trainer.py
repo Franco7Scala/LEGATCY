@@ -43,3 +43,4 @@ def evaluate(model, data, target_type, run, directory):
         os.makedirs(directory, exist_ok=True)
         np.save(os.path.join(directory, f"embeddings_{run}.npy"), val_embeddings)
         return f1_micro, f1_macro, auc, precision, recall
+
