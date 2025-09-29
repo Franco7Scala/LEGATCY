@@ -93,4 +93,6 @@ class HeteroGAT(torch.nn.Module):
             for ntype in embeddings.keys()
         }
 
-        return out_dict, embeddings
+        out_dict["target_type"] = "author"
+
+        return out_dict #, embeddings

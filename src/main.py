@@ -124,7 +124,8 @@ for snapshot in range(n_snapshot):
             dropout=0.4,
             num_layers=3
         ).to(device)
-        out_dict, emb_dict = model(data.x_dict, data.edge_index_dict)
+        #out_dict, emb_dict = model(data.x_dict, data.edge_index_dict)
+        out_dict = model(data.x_dict, data.edge_index_dict)
 
         if snapshot != 0 and strategy.needs_previous_model:
             cprint(f"Loading model from previous snapshot...", Color.EXPERIMENT_STATUS_LOW_PRIORITY)

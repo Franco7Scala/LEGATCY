@@ -14,7 +14,7 @@ def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer
         model.train()
         optimizer.zero_grad()
         data = data_splits[epoch]
-        out, _ = model(data.x_dict, data.edge_index_dict)
+        out = model(data.x_dict, data.edge_index_dict)
         mask = data[target_type].train_mask
         loss = criterion(out[target_type][mask], data[target_type].y[mask])
         loss.backward()
@@ -30,17 +30,19 @@ def evaluate(model, data, target_type, run, directory):
     model.eval()
     with torch.no_grad():
         mask = data[target_type].test_mask
-        out, embeddings = model(data.x_dict, data.edge_index_dict)
+        out = model(data.x_dict, data.edge_index_dict)
         pred = out[target_type][mask].argmax(dim=-1)
-        pred_prob = torch.nn.functional.softmax(model(data.x_dict, data.edge_index_dict)[0][target_type][mask], -1)
+        pred_prob = torch.nn.functional.softmax(model(data.x_dict, data.edge_index_dict)[target_type][mask], -1)
         f1_micro = f1_score(data[target_type].y[mask].cpu(), pred.cpu(), average="micro")
         f1_macro = f1_score(data[target_type].y[mask].cpu(), pred.cpu(), average="macro")
         auc = compute_auc(data[target_type].y[mask].cpu().numpy(), pred_prob.cpu().detach().numpy())
         precision = precision_score(data[target_type].y[mask].cpu(), pred.cpu(), average=None, zero_division=0)
         recall = recall_score(data[target_type].y[mask].cpu(), pred.cpu(), average=None, zero_division=0)
+        """
         # Save embeddings for validation set
         val_embeddings = embeddings[target_type].cpu().numpy()
         os.makedirs(directory, exist_ok=True)
         np.save(os.path.join(directory, f"embeddings_{run}.npy"), val_embeddings)
+        """
         return f1_micro, f1_macro, auc, precision, recall
 

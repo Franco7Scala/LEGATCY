@@ -159,7 +159,7 @@ class DyHANE(AbstractStrategy):
         )
         num_target_nodes = torch.arange(data.x_dict[target_type].shape[0])
         with torch.no_grad():
-            explainer = explainer(data.x_dict, data.edge_index_dict, target=data.y_dict[target_type], index=num_target_nodes)
+            explainer = explainer(data.x_dict, data.edge_index_dict, target=data.y_dict[target_type]) #torch_geometric.explain.Explainer
         return explainer
 
     #nota: sono i nodi più "significativi" del vecchio modello
