@@ -7,6 +7,7 @@ import warnings
 from torch_geometric.explain import Explainer, CaptumExplainer
 
 from models.HeteroGAT import HeteroGAT
+from sampling_strategies.other_dyhane import DyHANE
 from src.sampling_strategies.other_full_retraining import FullRetraining
 from src.sampling_strategies.other_online_training import OnlineTraining
 from src.sampling_strategies.active_ers2 import ActiveERS2
@@ -30,9 +31,10 @@ max_lr = 0.005
 min_lr = 1e-4
 focal_gamma = 2
 focal_alpha = 5
-training_strategy = ActiveERS2 #FullRetraining  # FullRetraining OnlineTraining ActiveERS2
-sampling_technique = MarginALTechnique#None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = 500#None                            # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
+training_strategy = DyHANE # ActiveERS2 #FullRetraining  # FullRetraining OnlineTraining ActiveERS2
+sampling_technique = None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+k = \
+    None    #500                        # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 
 
 ############################################################################################
@@ -114,6 +116,7 @@ for snapshot in range(n_snapshot):
         #out, emb = model(data.x_dict, data.edge_index_dict)
 
         #NEW version using directly HeteroGAT with HeteroConv
+
         model = HeteroGAT(
             metadata=data.metadata(),
             hidden_channels=64,

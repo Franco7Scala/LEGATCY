@@ -1,16 +1,19 @@
 from torch_geometric.data import HeteroData
 import torch
-from torch_geometric.explain import Explainer, CaptumExplainer
+import torch_geometric.explain
 from torch_geometric.nn import to_hetero
 
+from data.data_utils import create_nodes_dict_empty
 from sampling_strategies.abstract_strategy import AbstractStrategy
-from support.utils import get_metapaths
+from support.utils import get_metapaths, get_device
 
 
 class DyHANE(AbstractStrategy):
 
     def __init__(self):
-        super(DyHANE).__init__()
+        super(DyHANE, self).__init__()
+        self.needs_previous_data = True
+
 
     def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, target_type, kwargs=None):
         result = []
@@ -21,7 +24,10 @@ class DyHANE(AbstractStrategy):
             metapaths = data.mps
             new_nodes_typed = self._select_new_nodes(data, new_edges, metapaths)
             # taking old nodes
-            old_nodes_typed = self._select_old_nodes(kwargs.old_model, kwargs.old_data, target_type)
+            if hasattr(kwargs, "old_model"):
+                old_nodes_typed = self._select_old_nodes(kwargs.old_model, kwargs.old_data, target_type)
+            else:
+                old_nodes_typed = self._initialize_split_dict(data, dtype=torch.tensor)
             # adding them to the mask
             for n_type in data.x_dict:
                 sampling_mask[n_type] = torch.cat(
@@ -71,7 +77,7 @@ class DyHANE(AbstractStrategy):
 
         # For each new edge
         for etype, edges in new_edges.items():
-            src_type, _, dst_type = etype
+            src_type, _, dst_type = etype.split("_")[0], etype.split("_")[1], etype.split("_")[2]
             for (u, v) in edges:
                 self._safe_add(node_dict, src_type).add(u)
                 self._safe_add(node_dict, dst_type).add(v)
@@ -135,13 +141,13 @@ class DyHANE(AbstractStrategy):
                                 self._safe_add(node_dict, 'author').update(dsts[srcs == node].tolist())
                                 self._safe_add(node_dict, 'author').update(srcs[dsts == node].tolist())
 
-        return {ntype: sorted(list(ids)) for ntype, ids in node_dict.items()}
+        return {ntype: torch.tensor(list(ids)).to(data[data.node_types[0]].x.device) for ntype, ids in node_dict.items()}
 
 
     def _get_explainer(self, model, data, target_type):
-        explainer = Explainer(
+        explainer = torch_geometric.explain.Explainer(
             model=model,
-            algorithm=CaptumExplainer('IntegratedGradients'),  # InputXGradient
+            algorithm=torch_geometric.explain.CaptumExplainer('IntegratedGradients'),  # InputXGradient
             explanation_type='phenomenon',  # model's beahviour (model) vs individual predictions (phenomenon)
             node_mask_type='attributes',
             edge_mask_type=None,
@@ -176,7 +182,7 @@ class DyHANE(AbstractStrategy):
         # top nodes for each type
         for i, nt in enumerate(n_types):
             values, indices = torch.topk(explanation.node_mask_dict[nt].sum(-1), k=rates[i])
-            old_nodes[nt] = indices.cpu().numpy().tolist()
+            old_nodes[nt] = indices #.cpu().numpy().tolist()
 
         return old_nodes
 
