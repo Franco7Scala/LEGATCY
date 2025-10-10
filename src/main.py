@@ -26,15 +26,18 @@ from torch_geometric.nn import to_hetero
 
 
 dataset_name = "openalex"
-n_epochs = 1
+n_epochs = 400 #200
 max_lr = 0.005
 min_lr = 1e-4
+num_layers = 3
+hidden_channels = 128
+dropout = 0.3
+
 focal_gamma = 2
 focal_alpha = 5
-training_strategy = DyHANE # ActiveERS2 #FullRetraining  # FullRetraining OnlineTraining ActiveERS2
+training_strategy = FullRetraining #DyHANE # ActiveERS2 #FullRetraining  # FullRetraining OnlineTraining ActiveERS2
 sampling_technique = None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = \
-    None    #500                        # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
+k = None    #500                        # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 
 
 ############################################################################################
@@ -57,6 +60,9 @@ cprint(f"Experiment config:\n"
        f"- k: {k}\n"
        f"- max lr: {max_lr}\n"
        f"- min lr: {min_lr}\n"
+       f"- num layers: {num_layers}\n"
+       f"- hidden channels: {hidden_channels}\n"
+       f"- dropout: {dropout}\n"
        f"- focal gamma: {focal_gamma}\n"
        f"- n snapshot: {n_snapshot}\n"
        f"- Training strategy: {training_strategy.__name__}\n"
@@ -119,10 +125,10 @@ for snapshot in range(n_snapshot):
 
         model = HeteroGAT(
             metadata=data.metadata(),
-            hidden_channels=64,
+            hidden_channels=hidden_channels, #64
             out_channels=num_classes,
-            dropout=0.4,
-            num_layers=3
+            dropout=dropout, #0.4,
+            num_layers=num_layers
         ).to(device)
         #out_dict, emb_dict = model(data.x_dict, data.edge_index_dict)
         out_dict = model(data.x_dict, data.edge_index_dict)
