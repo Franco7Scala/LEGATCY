@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 from src.support.utils import compute_auc
+from support.utils_graph import extract_hetero_k_hop_subgraph
 
 
 def train(model, all_data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory, n_epochs=200, kwargs=None):
