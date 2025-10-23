@@ -1,5 +1,9 @@
+import copy
+
 import torch
 from torch_geometric.loader import HGTLoader
+
+from src.data.data_utils import create_nodes_dict_empty
 
 """
 By FLESCA:
@@ -53,60 +57,51 @@ def extract_hetero_k_hop_subgraph(data, selected_nodes_dict, target_type, k=2):
     return sub_data, node_mapping
 
 
-def extract_hetero_k_hop_subgraph_all(data, selected_nodes_dict, target_type, k=2):
+def k_hop_subgraph(data, seeds_mask, k=2):
+    target_type = list(seeds_mask.keys())[0]
+    seeds_mask = seeds_mask[target_type]
+    subgraph_mask = create_nodes_dict_empty(data)
+    for edge_type in data.edge_types:
+        src_type, _, dst_type = edge_type
+        if dst_type == target_type:
+            for idx, node in enumaerate(data[edge_type]["edge_index"][1]):
+                if node.item() in seeds_mask:
+                    subgraph_mask[src_type].append(data[edge_type]["edge_index"][0][idx].item())
+
+        if src_type == target_type:
+            for idx, node in enumaerate(data[edge_type]["edge_index"][0]):
+                if node.item() in seeds_mask:
+                    subgraph_mask[src_type].append(data[edge_type]["edge_index"][1][idx].item())
+
+    #TODO add meta paths for heterogeneous graphs
+    return data.subgraph(_merge_masks(seeds_mask, _hop_traveling(data, target_type, subgraph_mask, k-1)))
 
 
-    # Run HGTLoader only from the target_type (PyG requirement)
-    loader = HGTLoader(
-        data,
-        num_samples={ntype: [999999] * k for ntype in data.node_types},  # full neighborhood up to k hops
-        input_nodes=(target_type, selected_nodes_dict[target_type].to(torch.long)),
-        batch_size=len(selected_nodes_dict[target_type]),
-        shuffle=False,
-    )
+def _hop_traveling(data, target_type, subgraph_mask, k):
+    if k == 0:
+        return subgraph_mask
 
-    sub_data = next(iter(loader))
-    node_mapping = {ntype: sub_data.n_id_dict[ntype] for ntype in sub_data.node_types}
+    next_hop_subgraph_mask = create_nodes_dict_empty(data)
+    for edge_type in data.edge_types:
+        src_type, _, dst_type = edge_type
+        for node_type in subgraph_mask.keys():
+            prevoius_hop_nodes = subgraph_mask[node_type]
+            if dst_type == node_type and src_type != target_type:
+                for idx, node in enumaerate(data[edge_type]["edge_index"][0]):
+                    if node.item() in prevoius_hop_nodes:
+                        next_hop_subgraph_mask[dst_type].append(data[edge_type]["edge_index"][1][idx].item())
 
-    # Add any missing explicitly selected nodes (other types)
-    for ntype, selected_ids in selected_nodes_dict.items():
-        if ntype == target_type:
-            continue  # already covered
-        if ntype not in sub_data.node_types:
-            # This node type was not sampled at all -> add placeholder type
-            sub_data[ntype].x = data[ntype].x[selected_ids]
-            node_mapping[ntype] = selected_ids
-        else:
-            # Append any missing node IDs that weren't reached by sampling
-            existing_ids = node_mapping[ntype].cpu()
-            missing_ids = torch.tensor([nid for nid in selected_ids.tolist() if nid not in existing_ids.tolist()],
-                                       dtype=torch.long)
-            if len(missing_ids) > 0:
-                extra_x = data[ntype].x[missing_ids]
-                sub_data[ntype].x = torch.cat([sub_data[ntype].x, extra_x], dim=0)
-                node_mapping[ntype] = torch.cat([existing_ids, missing_ids])
+            if src_type == node_type and src_type != target_type:
+                for idx, node in enumaerate(data[edge_type]["edge_index"][1]):
+                    if node.item() in prevoius_hop_nodes:
+                        next_hop_subgraph_mask[src_type].append(data[edge_type]["edge_index"][0][idx].item())
 
-    # Add masks
-    for ntype in sub_data.node_types:
-        n_nodes = sub_data[ntype].num_nodes
-        device = sub_data[ntype].x.device if 'x' in sub_data[ntype] else torch.device('cpu')
-        sub_data[ntype].core_mask = torch.zeros(n_nodes, dtype=torch.bool, device=device)
+    return _hop_traveling(data, target_type, next_hop_subgraph_mask, k-1)
 
-    for ntype, input_nodes in selected_nodes_dict.items():
-        if ntype in node_mapping:
-            orig_ids = node_mapping[ntype]
-            core_mask = torch.isin(orig_ids, input_nodes.to(orig_ids.device))
-            sub_data[ntype].core_mask = core_mask
 
-    for ntype in sub_data.node_types:
-        sub_data[ntype].peripheral_mask = ~sub_data[ntype].core_mask
+def _merge_masks(mask1, mask2):
+    mask1 = copy.deepcopy(mask1)
+    for ntype in mask1.keys():
+        mask1[ntype] = list(set(mask1[ntype].extend(mask2[ntype])))
 
-    # Align train/val/test masks (target type only)
-    device = sub_data[target_type].x.device if 'x' in sub_data[target_type] else torch.device('cpu')
-    sub_data[target_type].core_mask = sub_data[target_type].core_mask.to(device)
-    for mask_name in ['train_mask', 'val_mask', 'test_mask']:
-        if mask_name in sub_data[target_type]:
-            sub_data[target_type][mask_name] = sub_data[target_type][mask_name].to(device)
-            sub_data[target_type][mask_name] &= sub_data[target_type].core_mask
-
-    return sub_data, node_mapping
+    return mask1
