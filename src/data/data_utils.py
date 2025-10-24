@@ -404,7 +404,7 @@ def create_nodes_dict_full(data):
 
 def create_nodes_dict_empty(data):
     res = {}
-    for node_type in data.x_dict:
+    for node_type in data.node_types:
         res[node_type] = []
     return res
 

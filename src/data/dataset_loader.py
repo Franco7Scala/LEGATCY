@@ -35,8 +35,8 @@ def load_dataset(dataset_name, n_snapshot, k):
             mask = mask[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)]
             snapshots.append(k_hop_subgraph(dataset.data, target_type, mask, k))
 
-    return snapshots
+    return dataset.data, snapshots
 
 
-x = load_dataset("imdb", 3, 2)
-print()
+d, x = load_dataset("dblp", 3, 2) #TODO fare bene la divisione fra test e train
+print()    #FIXME bug DBLP dataset conference node senza features lo fa scoppiare

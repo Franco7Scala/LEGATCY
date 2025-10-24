@@ -4,10 +4,12 @@ import pandas
 import torch
 import warnings
 
+from torch_geometric.nn import to_hetero
 from torch_geometric.explain import Explainer, CaptumExplainer
 
-from models.HeteroGAT import HeteroGAT
-from sampling_strategies.other_dyhane import DyHANE
+from src.data.dataset_loader import load_dataset
+from src.models.HeteroGAT import HeteroGAT
+from src.sampling_strategies.other_dyhane import DyHANE
 from src.sampling_strategies.other_full_retraining import FullRetraining
 from src.sampling_strategies.other_online_training import OnlineTraining
 from src.sampling_strategies.active_ers2 import ActiveERS2
@@ -20,17 +22,18 @@ from src.models.GAT import GAT
 from src.support.focal_loss import FocalLoss
 from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs, compute_weights
 from src.data.data_utils import get_target_type
-from src.data.graph_loader import build_heterodata, get_knowledge
+from src.data.graph_loader import get_knowledge
 from src.trainer import train, evaluate
-from torch_geometric.nn import to_hetero
 
 
 dataset_name = "openalex"
+n_snapshot = 3
+k_hop_subgraph = 2
 n_epochs = 400 #200
-max_lr = 0.005
-min_lr = 1e-4
+max_lr = 0.01
+min_lr = 1e-3
 num_layers = 3
-hidden_channels = 128
+hidden_channels = 64
 dropout = 0.3
 
 focal_gamma = 2
@@ -46,7 +49,6 @@ k = None    #500                        # used only with ActiveERS2, it identifi
 kwargs = Kwargs()
 warnings.filterwarnings("ignore")
 device = utils.get_device()
-n_snapshot = count_n_snapshots(dataset_name)
 root_dir = os.path.join(get_base_dir(), dataset_name, "results", str(get_time_in_millis()))
 os.makedirs(root_dir, exist_ok=True)
 cprint(f"Saving results in '{root_dir}'", Color.EXPERIMENT_CONFIG_INFO)
@@ -69,26 +71,27 @@ cprint(f"Experiment config:\n"
        f"- Sampling technique: {'None' if sampling_technique is None else sampling_technique.__name__}\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
-for snapshot in range(n_snapshot):
-    cprint(f"Working on snapshot n.{snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
-    subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{snapshot}")
+cprint(f"Loading dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+data, snapshots = load_dataset(dataset_name=dataset_name, n_snapshot=n_snapshot, k=k_hop_subgraph)
+data = data.to(device)
+
+for idx_snapshot, snapshot in enumerate(snapshots):
+    cprint(f"Working on snapshot n.{idx_snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
+    subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{idx_snapshot}")
     os.makedirs(subgraphs_dir, exist_ok=True)
     kwargs.subgraphs_dir = subgraphs_dir
 
     cprint(f"Initializing training strategy...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
     strategy = training_strategy()
 
-    cprint(f"Building dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-    data = build_heterodata(dataset_name=dataset_name, no_snapshot=snapshot).to(device)
-
-    if snapshot != 0 and strategy.needs_previous_data:
-        kwargs.old_data = build_heterodata(dataset_name=dataset_name, no_snapshot=snapshot - 1).to(device)
+    if idx_snapshot != 0 and strategy.needs_previous_data:
+        kwargs.old_data = snapshots[idx_snapshot - 1].to(device)
 
     else:
         kwargs.old_data = None
 
-    new_nodes, new_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=True)
-    old_nodes, old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=False)
+    new_nodes, new_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=True) #TODO da sostituire
+    old_nodes, old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=False) #TODO da sostituire
     target_type = get_target_type(dataset_name)
     num_classes = len(torch.unique(data[target_type].y))
 
@@ -99,8 +102,8 @@ for snapshot in range(n_snapshot):
     print()
 
     cprint(f"Number of classes: {num_classes}", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
-    previous_output_dir = os.path.join(root_dir, f"snapshot_{snapshot-1}")
-    output_dir = os.path.join(root_dir, f"snapshot_{snapshot}")
+    previous_output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot-1}")
+    output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot}")
     os.makedirs(output_dir, exist_ok=True)
 
     l_micro = []
@@ -125,15 +128,15 @@ for snapshot in range(n_snapshot):
 
         model = HeteroGAT(
             metadata=data.metadata(),
-            hidden_channels=hidden_channels, #64
+            hidden_channels=hidden_channels,
             out_channels=num_classes,
-            dropout=dropout, #0.4,
+            dropout=dropout,
             num_layers=num_layers
         ).to(device)
         #out_dict, emb_dict = model(data.x_dict, data.edge_index_dict)
         out_dict = model(data.x_dict, data.edge_index_dict)
 
-        if snapshot != 0 and strategy.needs_previous_model:
+        if idx_snapshot != 0 and strategy.needs_previous_model:
             cprint(f"Loading model from previous snapshot...", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
             model.load_state_dict(torch.load(os.path.join(previous_output_dir, f"model_{run}.pth")))
             kwargs.old_model = model
@@ -174,7 +177,7 @@ for snapshot in range(n_snapshot):
     data_frame["ROC-AUC"] = l_auc
     data_frame["time"] = l_times
     processing_results(data_frame).to_excel(os.path.join(output_dir, "results.xlsx"), index=False)
-    cprint(f"Completed snapshot n.{snapshot}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+    cprint(f"Completed snapshot n.{idx_snapshot}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
 
 cprint(f"Completed!", Color.OTHER)
 

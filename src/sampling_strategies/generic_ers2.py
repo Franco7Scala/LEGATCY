@@ -1,6 +1,7 @@
 import torch
 
 from src.sampling_strategies.abstract_strategy import AbstractStrategy
+from src.support.utils_graph import k_hop_subgraph
 
 
 class GenericERS2(AbstractStrategy):
@@ -23,7 +24,7 @@ class GenericERS2(AbstractStrategy):
                 sampling_mask[n_type] = torch.cat((new_nodes_typed[n_type].to(torch.int), old_nodes_typed[n_type].to(torch.int)))
 
             # applying sampling mask to the data generating a split ready for the training
-            result.append(data.subgraph(sampling_mask))
+            result.append(k_hop_subgraph(data, target_type, sampling_mask, 2))
 
         return result
 
