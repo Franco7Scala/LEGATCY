@@ -7,9 +7,10 @@ from torch_geometric.loader import HGTLoader
 
 from src.data.data_utils import create_nodes_dict_empty
 from src.support.utils import get_base_dir
+from src.support.utils_graph import k_hop_subgraph
 
 
-def load_dataset(dataset_name, n_snapshot):
+def load_dataset(dataset_name, n_snapshot, k):
     path = os.path.join(get_base_dir(), dataset_name)
     snapshots = []
 
@@ -22,7 +23,7 @@ def load_dataset(dataset_name, n_snapshot):
         target_type = "paper"
 
     else:
-        raise Exception(f"Dataset {dataset_name} not recognized or not implemented yet!")
+        raise Exception(f"Unknown dataset '{dataset_name}'!")
 
     size = dataset.data[target_type].x.shape[0]
     if n_snapshot == 1:
@@ -30,27 +31,12 @@ def load_dataset(dataset_name, n_snapshot):
 
     else:
         for i in range(n_snapshot):
-            mask_tt = torch.arange(1, size) #torch.zeros(size, dtype=torch.bool)
-            #mask_tt[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)] = 1
-            mask_tt = mask_tt[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)]
-
-            #mask = create_nodes_dict_empty(dataset.data)
-            mask = {}
-            mask[target_type] = mask_tt
-
-
-            snapshots.append(dataset.data.subgraph(mask))
-
-            '''loader = HGTLoader(
-                dataset.data,
-                num_samples = {ntype: [99999] * 2 for ntype in dataset.data.node_types},  # full (non-sampled) neighborhood 2-hop
-                input_nodes = (target_type, mask)  # core nodes per type
-            )
-            snapshots.append(next(iter(loader)))
-            '''
+            mask = torch.arange(1, size)
+            mask = mask[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)]
+            snapshots.append(k_hop_subgraph(dataset.data, target_type, mask, k))
 
     return snapshots
 
 
-x = load_dataset("dblp", 3)
+x = load_dataset("imdb", 3, 2)
 print()

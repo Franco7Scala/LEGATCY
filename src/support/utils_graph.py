@@ -57,24 +57,23 @@ def extract_hetero_k_hop_subgraph(data, selected_nodes_dict, target_type, k=2):
     return sub_data, node_mapping
 
 
-def k_hop_subgraph(data, seeds_mask, k=2):
-    target_type = list(seeds_mask.keys())[0]
-    seeds_mask = seeds_mask[target_type]
+def k_hop_subgraph(data, target_type, seeds_mask, k):
     subgraph_mask = create_nodes_dict_empty(data)
     for edge_type in data.edge_types:
         src_type, _, dst_type = edge_type
         if dst_type == target_type:
-            for idx, node in enumaerate(data[edge_type]["edge_index"][1]):
+            for idx, node in enumerate(data[edge_type]["edge_index"][1]):
                 if node.item() in seeds_mask:
                     subgraph_mask[src_type].append(data[edge_type]["edge_index"][0][idx].item())
 
         if src_type == target_type:
-            for idx, node in enumaerate(data[edge_type]["edge_index"][0]):
+            for idx, node in enumerate(data[edge_type]["edge_index"][0]):
                 if node.item() in seeds_mask:
-                    subgraph_mask[src_type].append(data[edge_type]["edge_index"][1][idx].item())
+                    subgraph_mask[dst_type].append(data[edge_type]["edge_index"][1][idx].item())
 
     #TODO add meta paths for heterogeneous graphs
-    return data.subgraph(_merge_masks(seeds_mask, _hop_traveling(data, target_type, subgraph_mask, k-1)))
+    subgraph_mask[target_type] = seeds_mask.tolist()
+    return data.subgraph(_merge_masks(subgraph_mask, _hop_traveling(data, target_type, subgraph_mask, k-1)))
 
 
 def _hop_traveling(data, target_type, subgraph_mask, k):
@@ -85,23 +84,32 @@ def _hop_traveling(data, target_type, subgraph_mask, k):
     for edge_type in data.edge_types:
         src_type, _, dst_type = edge_type
         for node_type in subgraph_mask.keys():
-            prevoius_hop_nodes = subgraph_mask[node_type]
-            if dst_type == node_type and src_type != target_type:
-                for idx, node in enumaerate(data[edge_type]["edge_index"][0]):
-                    if node.item() in prevoius_hop_nodes:
-                        next_hop_subgraph_mask[dst_type].append(data[edge_type]["edge_index"][1][idx].item())
+            if node_type != target_type:
+                prevoius_hop_nodes = subgraph_mask[node_type]
+                if dst_type == node_type and src_type != target_type:
+                    for idx, node in enumerate(data[edge_type]["edge_index"][1]):
+                        if node.item() in prevoius_hop_nodes:
+                            next_hop_subgraph_mask[src_type].append(data[edge_type]["edge_index"][0][idx].item())
 
-            if src_type == node_type and src_type != target_type:
-                for idx, node in enumaerate(data[edge_type]["edge_index"][1]):
-                    if node.item() in prevoius_hop_nodes:
-                        next_hop_subgraph_mask[src_type].append(data[edge_type]["edge_index"][0][idx].item())
+                if src_type == node_type and dst_type != target_type:
+                    for idx, node in enumerate(data[edge_type]["edge_index"][0]):
+                        if node.item() in prevoius_hop_nodes:
+                            next_hop_subgraph_mask[dst_type].append(data[edge_type]["edge_index"][1][idx].item())
 
     return _hop_traveling(data, target_type, next_hop_subgraph_mask, k-1)
 
 
-def _merge_masks(mask1, mask2):
-    mask1 = copy.deepcopy(mask1)
-    for ntype in mask1.keys():
-        mask1[ntype] = list(set(mask1[ntype].extend(mask2[ntype])))
+def _merge_masks(first_mask, second_mask):
+    merged_mask = {}
+    for ntype in first_mask.keys():
+        merged_mask[ntype] = []
 
-    return mask1
+    for ntype in second_mask.keys():
+        merged_mask[ntype] = []
+
+    for ntype in merged_mask.keys():
+        mask_1 = first_mask[ntype] if ntype in first_mask else []
+        mask_2 = second_mask[ntype] if ntype in second_mask else []
+        merged_mask[ntype] = list(set(mask_1 + mask_2))
+
+    return merged_mask
