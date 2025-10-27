@@ -9,7 +9,7 @@ class GenericERS2(AbstractStrategy):
     def __init__(self):
         super(GenericERS2, self).__init__()
 
-    def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, target_type, kwargs=None):
+    def sample(self, n_split, data, new_nodes, old_nodes, target_type, kwargs=None):
         result = []
         self.subgraphs_dir = kwargs.subgraphs_dir
         # iterating over all the splits to generate
@@ -24,7 +24,7 @@ class GenericERS2(AbstractStrategy):
                 sampling_mask[n_type] = torch.cat((new_nodes_typed[n_type].to(torch.int), old_nodes_typed[n_type].to(torch.int)))
 
             # applying sampling mask to the data generating a split ready for the training
-            result.append(k_hop_subgraph(data, target_type, sampling_mask, 2))
+            result.append(k_hop_subgraph(data, target_type, sampling_mask[target_type], 2))
 
         return result
 

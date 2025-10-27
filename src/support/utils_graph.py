@@ -21,7 +21,9 @@ def k_hop_subgraph(data, target_type, seeds_mask, k):
 
     #TODO add meta paths for heterogeneous graphs
     subgraph_mask[target_type] = seeds_mask.tolist()
-    return data.subgraph(_merge_masks(subgraph_mask, _hop_traveling(data, target_type, subgraph_mask, k-1)))
+    subgraph_mask = _merge_masks(subgraph_mask, _hop_traveling(data, target_type, subgraph_mask, k-1))
+    subgraph_data = data.subgraph(subgraph_mask)
+    return subgraph_data, subgraph_mask
 
 
 def _hop_traveling(data, target_type, subgraph_mask, k):

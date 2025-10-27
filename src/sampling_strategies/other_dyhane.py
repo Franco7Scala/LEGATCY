@@ -12,20 +12,21 @@ class DyHANE(AbstractStrategy):
 
     def __init__(self):
         super(DyHANE, self).__init__()
-        self.needs_previous_data = True
 
-
-    def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, target_type, kwargs=None):
+    def sample(self, n_split, data, new_nodes, old_nodes, target_type, kwargs=None):
         result = []
         # iterating over all the splits to generate
         for split in range(n_split):
             sampling_mask = {}
             # taking new nodes (new+changed nodes --- influenced nodes)
             metapaths = data.mps
+
+            new_edges = None #TODO: to be fixed
+
             new_nodes_typed = self._select_new_nodes(data, new_edges, metapaths)
             # taking old nodes
             if hasattr(kwargs, "old_model"):
-                old_nodes_typed = self._select_old_nodes(kwargs.old_model, kwargs.old_data, target_type)
+                old_nodes_typed = self._select_old_nodes(kwargs.old_model, old_nodes, target_type)
             else:
                 old_nodes_typed = self._initialize_split_dict(data, dtype=torch.tensor)
             # adding them to the mask

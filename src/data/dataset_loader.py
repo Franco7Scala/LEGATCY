@@ -12,7 +12,7 @@ from src.support.utils_graph import k_hop_subgraph
 
 def load_dataset(dataset_name, n_snapshot, k):
     path = os.path.join(get_base_dir(), dataset_name)
-    snapshots = []
+    snapshot_masks = []
 
     if dataset_name == "imdb":
         dataset = IMDB(path)
@@ -33,10 +33,10 @@ def load_dataset(dataset_name, n_snapshot, k):
         for i in range(n_snapshot):
             mask = torch.arange(1, size)
             mask = mask[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)]
-            snapshots.append(k_hop_subgraph(dataset.data, target_type, mask, k))
+            snapshot_masks.append(k_hop_subgraph(dataset.data, target_type, mask, k)[1])
 
-    return dataset.data, snapshots
+    return dataset.data, target_type, snapshot_masks
 
 
-d, x = load_dataset("dblp", 3, 2) #TODO fare bene la divisione fra test e train
-print()    #FIXME bug DBLP dataset conference node senza features lo fa scoppiare
+#d, x = load_dataset("dblp", 3, 2) #TODO fare bene la divisione fra test e trainà
+#print()    #FIXME bug DBLP dataset conference node senza features lo fa scoppiare

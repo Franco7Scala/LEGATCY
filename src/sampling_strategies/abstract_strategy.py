@@ -5,9 +5,8 @@ class AbstractStrategy:
 
     def __init__(self):
         self.needs_previous_model = True
-        self.needs_previous_data = False
 
-    def sample(self, n_split, data, new_nodes, new_edges, old_nodes, old_edges, kwargs=None):
+    def sample(self, n_split, data, new_nodes, old_nodes, kwargs=None):
         pass
 
     def _initialize_split_dict(self, data, dtype=list):

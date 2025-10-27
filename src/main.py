@@ -6,7 +6,6 @@ import warnings
 
 from torch_geometric.nn import to_hetero
 from torch_geometric.explain import Explainer, CaptumExplainer
-
 from src.data.dataset_loader import load_dataset
 from src.models.HeteroGAT import HeteroGAT
 from src.sampling_strategies.other_dyhane import DyHANE
@@ -18,29 +17,29 @@ from src.al_techniques.margin_al_technique import MarginALTechnique
 from src.al_techniques.lcs_al_technique import LCSALTechnique
 from src.al_techniques.entropy_al_technique import EntropyALTechnique
 from src.support import utils
-from src.models.GAT import GAT
 from src.support.focal_loss import FocalLoss
 from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs, compute_weights
-from src.data.data_utils import get_target_type
-from src.data.graph_loader import get_knowledge
+from src.data.data_utils import create_nodes_dict_empty
 from src.trainer import train, evaluate
 
 
-dataset_name = "openalex"
+# experiment setting parameters
+dataset_name = "imdb"
 n_snapshot = 3
 k_hop_subgraph = 2
-n_epochs = 400 #200
+training_strategy = FullRetraining      # DyHANE ActiveERS2 FullRetraining OnlineTraining
+sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+k = None                                # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
+
+# training parameters
+n_epochs = 1 #200
 max_lr = 0.01
 min_lr = 1e-3
+
+# model parameters
 num_layers = 3
 hidden_channels = 64
 dropout = 0.3
-
-focal_gamma = 2
-focal_alpha = 5
-training_strategy = FullRetraining #DyHANE # ActiveERS2 #FullRetraining  # FullRetraining OnlineTraining ActiveERS2
-sampling_technique = None           # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = None    #500                        # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 
 
 ############################################################################################
@@ -65,17 +64,17 @@ cprint(f"Experiment config:\n"
        f"- num layers: {num_layers}\n"
        f"- hidden channels: {hidden_channels}\n"
        f"- dropout: {dropout}\n"
-       f"- focal gamma: {focal_gamma}\n"
+       #f"- focal gamma: {focal_gamma}\n"
        f"- n snapshot: {n_snapshot}\n"
        f"- Training strategy: {training_strategy.__name__}\n"
        f"- Sampling technique: {'None' if sampling_technique is None else sampling_technique.__name__}\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 cprint(f"Loading dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-data, snapshots = load_dataset(dataset_name=dataset_name, n_snapshot=n_snapshot, k=k_hop_subgraph)
+data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, n_snapshot=n_snapshot, k=k_hop_subgraph)
 data = data.to(device)
 
-for idx_snapshot, snapshot in enumerate(snapshots):
+for idx_snapshot, snapshot in enumerate(snapshot_masks):
     cprint(f"Working on snapshot n.{idx_snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
     subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{idx_snapshot}")
     os.makedirs(subgraphs_dir, exist_ok=True)
@@ -83,23 +82,17 @@ for idx_snapshot, snapshot in enumerate(snapshots):
 
     cprint(f"Initializing training strategy...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
     strategy = training_strategy()
-
-    if idx_snapshot != 0 and strategy.needs_previous_data:
-        kwargs.old_data = snapshots[idx_snapshot - 1].to(device)
+    new_nodes = snapshot_masks[idx_snapshot]
+    if idx_snapshot != 0:
+        old_nodes = snapshot_masks[idx_snapshot - 1]
 
     else:
-        kwargs.old_data = None
+        old_nodes = create_nodes_dict_empty(data)
 
-    new_nodes, new_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=True) #TODO da sostituire
-    old_nodes, old_edges = get_knowledge(dataset_name=dataset_name, no_snapshot=snapshot, new=False) #TODO da sostituire
-    target_type = get_target_type(dataset_name)
     num_classes = len(torch.unique(data[target_type].y))
-
     class_distribution = get_class_distribution(data, target_type)
     for i, count in enumerate(class_distribution):
         print(f"Samples' number of class {i}: {count.item()}")
-
-    print()
 
     cprint(f"Number of classes: {num_classes}", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
     previous_output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot-1}")
@@ -118,14 +111,6 @@ for idx_snapshot, snapshot in enumerate(snapshots):
         set_random_seed(training_seeds[run])
 
         cprint(f"Building model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-
-        # OLD version using to_hetero wrapper on the GAT model
-        #model = GAT(hidden_channels=64, out_channels=num_classes, dropout=0.4, num_layers=3)
-        #model = to_hetero(model, data.metadata(), aggr="sum").to(device)
-        #out, emb = model(data.x_dict, data.edge_index_dict)
-
-        #NEW version using directly HeteroGAT with HeteroConv
-
         model = HeteroGAT(
             metadata=data.metadata(),
             hidden_channels=hidden_channels,
@@ -133,7 +118,6 @@ for idx_snapshot, snapshot in enumerate(snapshots):
             dropout=dropout,
             num_layers=num_layers
         ).to(device)
-        #out_dict, emb_dict = model(data.x_dict, data.edge_index_dict)
         out_dict = model(data.x_dict, data.edge_index_dict)
 
         if idx_snapshot != 0 and strategy.needs_previous_model:
@@ -156,7 +140,7 @@ for idx_snapshot, snapshot in enumerate(snapshots):
         if k is not None:
             strategy.k = k
 
-        model = train(model, data, new_nodes, new_edges, old_nodes, old_edges, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs, kwargs=kwargs)
+        model = train(model, data, new_nodes, old_nodes, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs, kwargs=kwargs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
 
         f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, target_type, run, directory=output_dir)
