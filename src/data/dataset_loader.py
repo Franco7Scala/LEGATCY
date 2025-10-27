@@ -3,8 +3,7 @@ import torch
 
 from torch_geometric.datasets import IMDB
 from torch_geometric.datasets.dblp import DBLP
-from torch_geometric.loader import HGTLoader
-
+from torch_geometric.loader import HGTLoaders
 from src.data.data_utils import create_nodes_dict_empty
 from src.support.utils import get_base_dir
 from src.support.utils_graph import k_hop_subgraph
@@ -36,7 +35,3 @@ def load_dataset(dataset_name, n_snapshot, k):
             snapshot_masks.append(k_hop_subgraph(dataset.data, target_type, mask, k)[1])
 
     return dataset.data, target_type, snapshot_masks
-
-
-#d, x = load_dataset("dblp", 3, 2) #TODO fare bene la divisione fra test e trainà
-#print()    #FIXME bug DBLP dataset conference node senza features lo fa scoppiare
