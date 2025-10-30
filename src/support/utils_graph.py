@@ -23,7 +23,7 @@ def k_hop_subgraph(data, target_type, seeds_mask, k):
     subgraph_mask[target_type] = seeds_mask.tolist()
     subgraph_mask = _merge_masks(subgraph_mask, _hop_traveling(data, target_type, subgraph_mask, k-1))
     for ntype in subgraph_mask.keys():
-        subgraph_mask[ntype] = torch.tensor(subgraph_mask[ntype])
+        subgraph_mask[ntype] = torch.tensor(subgraph_mask[ntype]).to(data[data.node_types[0]].x.device)
 
     subgraph_data = data.subgraph(subgraph_mask)
     return subgraph_data, subgraph_mask

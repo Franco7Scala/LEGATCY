@@ -25,9 +25,9 @@ from src.trainer import train, evaluate
 
 # experiment setting parameters
 dataset_name = "imdb"
-n_snapshot = 3
+n_snapshot = 1
 k_hop_subgraph = 2
-training_strategy = ActiveERS2      # DyHANE ActiveERS2 FullRetraining OnlineTraining
+training_strategy = FullRetraining      # DyHANE ActiveERS2 FullRetraining OnlineTraining
 sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 k = None                                # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
 

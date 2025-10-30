@@ -3,7 +3,6 @@ import torch
 
 from torch_geometric.datasets import IMDB
 from torch_geometric.datasets.dblp import DBLP
-from torch_geometric.loader import HGTLoaders
 from src.data.data_utils import create_nodes_dict_empty
 from src.support.utils import get_base_dir
 from src.support.utils_graph import k_hop_subgraph
@@ -25,13 +24,9 @@ def load_dataset(dataset_name, n_snapshot, k):
         raise Exception(f"Unknown dataset '{dataset_name}'!")
 
     size = dataset.data[target_type].x.shape[0]
-    if n_snapshot == 1:
-         return [dataset.data]
-
-    else:
-        for i in range(n_snapshot):
-            mask = torch.arange(1, size)
-            mask = mask[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)]
-            snapshot_masks.append(k_hop_subgraph(dataset.data, target_type, mask, k)[1])
+    for i in range(n_snapshot):
+        mask = torch.arange(0, size)
+        mask = mask[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)]
+        snapshot_masks.append(k_hop_subgraph(dataset.data, target_type, mask, k)[1])
 
     return dataset.data, target_type, snapshot_masks
