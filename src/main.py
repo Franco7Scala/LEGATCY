@@ -33,12 +33,12 @@ k = None                                # used only with ActiveERS2, it identifi
 
 # training parameters
 n_epochs = 200
-max_lr = 0.01
+max_lr = 0.001
 min_lr = 1e-3
 
 # model parameters
 num_layers = 3
-hidden_channels = 64
+hidden_channels = 128
 dropout = 0.3
 
 
@@ -132,8 +132,8 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
 
         n_old = sum([len(old_nodes[val]) for val in old_nodes.keys()])
         n_new = sum([len(new_nodes[val]) for val in new_nodes.keys()])
-        t_max = max(1, int(n_new + (n_old / n_epochs)) * n_epochs)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=min_lr)
+        t_max = n_epochs
+        scheduler = None #torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=min_lr)
         if sampling_technique is not None:
             strategy.al_technique = sampling_technique(model)
 

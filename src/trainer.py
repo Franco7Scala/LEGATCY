@@ -19,7 +19,7 @@ def train(model, all_data, new_nodes, old_nodes, optimizer, criterion, scheduler
         loss = criterion(out[target_type][mask], data[target_type].y[mask])
         loss.backward()
         optimizer.step()
-        scheduler.step()
+        #scheduler.step()
         f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, target_type, run, directory)
         progress_bar.set_description(f"Epoch: {epoch + 1:03d}, Train Loss: {loss:.3f}, Val f1_micro: {f1_micro:.3f}, Val f1_macro: {f1_macro:.3f}, Val AUC: {auc:.3f}, Precision: [{' '.join('{:.5f}'.format(x) for x in precision)}], Recall: [{' '.join('{:.5f}'.format(x) for x in recall)}]")
 

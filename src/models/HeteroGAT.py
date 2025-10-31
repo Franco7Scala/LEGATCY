@@ -72,7 +72,7 @@ class HeteroGAT(torch.nn.Module):
             {ntype: Linear(-1, out_channels) for ntype in metadata[0]}
         )
 
-    def forward(self, x_dict, edge_index_dict):
+    def forward(self, x_dict, edge_index_dict, embeddings_only=False):
         # Hidden layers
         for i in range(self.num_layers - 1):
             x_dict = {
@@ -94,5 +94,8 @@ class HeteroGAT(torch.nn.Module):
         }
 
         out_dict["target_type"] = "author"
+
+        if embeddings_only:
+            return embeddings
 
         return out_dict #, embeddings

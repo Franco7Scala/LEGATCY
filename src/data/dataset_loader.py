@@ -12,11 +12,11 @@ def load_dataset(dataset_name, n_snapshot, k):
     path = os.path.join(get_base_dir(), dataset_name)
     snapshot_masks = []
 
-    if dataset_name == "imdb":
+    if dataset_name.lower() == "imdb".lower():
         dataset = IMDB(path)
         target_type = "movie"
 
-    elif dataset_name == "dblp":
+    elif dataset_name.lower() == "dblp".lower():
         dataset = DBLP(path)
         target_type = "paper"
 
