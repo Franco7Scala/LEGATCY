@@ -8,6 +8,7 @@ from torch_geometric.nn import to_hetero
 from torch_geometric.explain import Explainer, CaptumExplainer
 from src.data.dataset_loader import load_dataset
 from src.models.HeteroGAT import HeteroGAT
+from src.sampling_strategies.voting_strategy import VotingStrategy
 from src.sampling_strategies.other_dyhane import DyHANE
 from src.sampling_strategies.other_full_retraining import FullRetraining
 from src.sampling_strategies.other_online_training import OnlineTraining
@@ -25,20 +26,20 @@ from src.trainer import train, evaluate
 
 # experiment setting parameters
 dataset_name = "imdb"
-n_snapshot = 1
+n_snapshot = 3
 k_hop_subgraph = 2
-training_strategy = FullRetraining      # DyHANE ActiveERS2 FullRetraining OnlineTraining
+training_strategy = VotingStrategy      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
 sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = None                                # used only with ActiveERS2, it identifies the amount of data to keep from the old nodes
+k = 500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 
 # training parameters
 n_epochs = 200
-max_lr = 0.001
-min_lr = 1e-3
+max_lr = 0.01
+min_lr = 0.001
 
 # model parameters
 num_layers = 3
-hidden_channels = 128
+hidden_channels = 64
 dropout = 0.3
 
 

@@ -14,16 +14,16 @@ class ActiveERS2(BasicERS2):
         self.k = k
         self.splits = []
 
-    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type):
+    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type, kwargs=None):
         if current_split == 0:
-            self._calculate_splits(tot_split, data, old_nodes, target_type)
+            self._calculate_splits(tot_split, data, old_nodes, target_type, kwargs)
 
         if len(self.splits) <= current_split:
             return self._initialize_split_dict(data, torch.tensor)
 
         return self.splits[current_split]
 
-    def _calculate_splits(self, tot_split, data, old_nodes, target_type):
+    def _calculate_splits(self, tot_split, data, old_nodes, target_type, kwargs):
         scores_nodes_of_type = []
         # iterating over all types of nodes
         for i in range(len(data.node_stores)):

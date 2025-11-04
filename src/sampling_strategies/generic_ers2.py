@@ -16,9 +16,9 @@ class GenericERS2(AbstractStrategy):
         for split in range(n_split):
             sampling_mask = {}
             # taking new nodes
-            new_nodes_typed = self._select_new_nodes(split, n_split, data, new_nodes, old_nodes, target_type)
+            new_nodes_typed = self._select_new_nodes(split, n_split, data, new_nodes, old_nodes, target_type, kwargs)
             # taking old nodes
-            old_nodes_typed = self._select_old_nodes(split, n_split, data, new_nodes, old_nodes, target_type)
+            old_nodes_typed = self._select_old_nodes(split, n_split, data, new_nodes, old_nodes, target_type, kwargs)
             # adding them to the mask
             for n_type in data.x_dict:
                 sampling_mask[n_type] = torch.cat((new_nodes_typed[n_type].to(torch.int), old_nodes_typed[n_type].to(torch.int)))
@@ -28,8 +28,8 @@ class GenericERS2(AbstractStrategy):
 
         return result
 
-    def _select_new_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type):
+    def _select_new_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type, kwargs):
         pass
 
-    def _select_old_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type):
+    def _select_old_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type, kwargs):
         pass
