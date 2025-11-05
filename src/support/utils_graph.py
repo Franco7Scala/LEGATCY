@@ -66,3 +66,19 @@ def _merge_masks(first_mask, second_mask):
         merged_mask[ntype] = list(set(mask_1 + mask_2))
 
     return merged_mask
+
+
+def extract_edges(data, nodes):
+    edges = {}
+    for etype in data.edge_types:
+        edges[etype] = []
+        src_type, _, dst_type = etype
+        for edge in data[etype].edge_index.T:
+            src = edge[0]
+            dst = edge[1]
+            if src in nodes[src_type].to(data[data.node_types[0]].x.device) or dst in nodes[dst_type].to(data[data.node_types[0]].x.device):
+                edges[etype].append((src, dst))
+        edges[etype] = torch.tensor(edges[etype]).to(data[data.node_types[0]].x.device) #.T
+    return edges
+
+

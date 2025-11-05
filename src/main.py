@@ -28,9 +28,9 @@ from src.trainer import train, evaluate
 dataset_name = "imdb"
 n_snapshot = 3
 k_hop_subgraph = 2
-training_strategy = VotingStrategy      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
+training_strategy = DyHANE      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
 sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = 500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
+k = None #500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 
 # training parameters
 n_epochs = 200

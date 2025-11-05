@@ -6,6 +6,7 @@ from torch_geometric.nn import to_hetero
 from data.data_utils import create_nodes_dict_empty
 from sampling_strategies.abstract_strategy import AbstractStrategy
 from support.utils import get_metapaths, get_device
+from support.utils_graph import extract_edges
 
 
 class DyHANE(AbstractStrategy):
@@ -21,7 +22,7 @@ class DyHANE(AbstractStrategy):
             # taking new nodes (new+changed nodes --- influenced nodes)
             metapaths = data.mps
 
-            new_edges = None #TODO: to be fixed
+            new_edges = extract_edges(data, new_nodes) #TODO: to be fixed #sono gli archi incidenti ad almeno un nuovo nodo
 
             new_nodes_typed = self._select_new_nodes(data, new_edges, metapaths)
             # taking old nodes
@@ -78,7 +79,7 @@ class DyHANE(AbstractStrategy):
 
         # For each new edge
         for etype, edges in new_edges.items():
-            src_type, _, dst_type = etype.split("_")[0], etype.split("_")[1], etype.split("_")[2]
+            src_type, _, dst_type = etype
             for (u, v) in edges:
                 self._safe_add(node_dict, src_type).add(u)
                 self._safe_add(node_dict, dst_type).add(v)
