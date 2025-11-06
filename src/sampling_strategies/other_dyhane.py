@@ -53,7 +53,7 @@ class DyHANE(AbstractStrategy):
     """
     Args: data (HeteroData object), new_edges (dict { (src_type, rel_type, dst_type): [(u,v), ...] }),
     metapaths (list of metapaths, each is a list of edge types, 
-    e.g. [('author','writes','paper'), ('paper','is_written_by','author')])
+    e.g. [(target_type,'writes','paper'), ('paper','is_written_by',target_type)])
 
     Returns: dict { node_type: [node_ids] }
     """
@@ -61,6 +61,7 @@ class DyHANE(AbstractStrategy):
     def _select_new_nodes(self, data: HeteroData, new_edges, metapaths):
 
         node_dict = {}
+        target_type = data.target_type
 
         # Precompute adjacency per edge type for quick lookup
         neighbors = {}
@@ -75,7 +76,7 @@ class DyHANE(AbstractStrategy):
         # Precompute metapath-based adjacency
         metapath_edges = {}
         for meta_id in range(len(metapaths)):
-            meta_key = ('author', f'metapath_{meta_id}', 'author')
+            meta_key = (target_type, f'metapath_{meta_id}', target_type)
             if meta_key in data:
                 srcs, dsts = data[meta_key].edge_index
                 metapath_edges[meta_key] = set(map(tuple, zip(srcs.tolist(), dsts.tolist())))
@@ -91,7 +92,7 @@ class DyHANE(AbstractStrategy):
 
                 # Check all metapaths
                 for meta_id, metapath in enumerate(metapaths):
-                    meta_key = ('author', f'metapath_{meta_id}', 'author')
+                    meta_key = (target_type, f'metapath_{meta_id}', target_type)
                     if meta_key not in metapath_edges:
                         continue
 
@@ -118,7 +119,7 @@ class DyHANE(AbstractStrategy):
                                     new_right.extend(neighbors[r][node])
                             right_nodes = new_right
 
-                        if metapath[0][0] == 'author' and metapath[-1][2] == 'author':
+                        if metapath[0][0] == target_type and metapath[-1][2] == target_type:
                             for a1 in left_nodes:
                                 for a2 in right_nodes:
                                     if (a1, a2) not in metapath_edges[meta_key]:
@@ -140,11 +141,11 @@ class DyHANE(AbstractStrategy):
 
                     # meta-path neighbors for authors
                     for node, ntype in [(u, src_type), (v, dst_type)]:
-                        if ntype == 'author':
+                        if ntype == target_type:
                             for meta_key in metapath_edges.keys():
                                 srcs, dsts = data[meta_key].edge_index
-                                self._safe_add(node_dict, 'author').update(dsts[srcs == node].tolist())
-                                self._safe_add(node_dict, 'author').update(srcs[dsts == node].tolist())
+                                self._safe_add(node_dict, target_type).update(dsts[srcs == node].tolist())
+                                self._safe_add(node_dict, target_type).update(srcs[dsts == node].tolist())
 
         return {ntype: torch.tensor(list(ids)).to(data[data.node_types[0]].x.device) for ntype, ids in node_dict.items()}
 

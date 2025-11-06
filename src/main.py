@@ -34,7 +34,7 @@ sampling_technique = None               # used only with ActiveERS2, RandomALTec
 k = None                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 
 # training parameters
-n_epochs = 1
+n_epochs = 200
 max_lr = 0.01
 min_lr = 0.001
 
@@ -115,6 +115,7 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
         cprint(f"Building model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         model = HeteroGAT(
             metadata=data.metadata(),
+            target_type=target_type,
             hidden_channels=hidden_channels,
             out_channels=num_classes,
             dropout=dropout,

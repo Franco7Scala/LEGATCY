@@ -25,6 +25,7 @@ def load_dataset(dataset_name, n_snapshot, k):
         raise Exception(f"Unknown dataset '{dataset_name}'!")
 
     dataset.data.mps = get_metapaths(dataset_name)
+    dataset.data.target_type = target_type
 
     size = dataset.data[target_type].x.shape[0]
     for i in range(n_snapshot):

@@ -3,9 +3,10 @@ from torch_geometric.nn import GATv2Conv, HeteroConv, Linear  # <-- use Linear f
 
 
 class HeteroGAT(torch.nn.Module):
-    def __init__(self, metadata, hidden_channels=128, out_channels=2, dropout=0, num_layers=2):
+    def __init__(self, metadata, target_type, hidden_channels=128, out_channels=2, dropout=0, num_layers=2):
         super().__init__()
         self.num_layers = num_layers
+        self.target_type = target_type
 
         # Heterogeneous GAT layers
         self.convs = torch.nn.ModuleList()
@@ -93,7 +94,7 @@ class HeteroGAT(torch.nn.Module):
             for ntype in embeddings.keys()
         }
 
-        out_dict["target_type"] = "author"
+        out_dict["target_type"] = self.target_type
 
         if embeddings_only:
             return embeddings
