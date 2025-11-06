@@ -8,6 +8,8 @@ from sampling_strategies.abstract_strategy import AbstractStrategy
 from support.utils import get_metapaths, get_device
 from support.utils_graph import extract_edges
 
+from src.support.utils_graph import k_hop_subgraph
+
 
 class DyHANE(AbstractStrategy):
 
@@ -22,12 +24,13 @@ class DyHANE(AbstractStrategy):
             # taking new nodes (new+changed nodes --- influenced nodes)
             metapaths = data.mps
 
-            new_edges = extract_edges(data, new_nodes) #TODO: to be fixed #sono gli archi incidenti ad almeno un nuovo nodo
+            new_edges = extract_edges(data, new_nodes) # these are the edges incident to at least one new node
 
             new_nodes_typed = self._select_new_nodes(data, new_edges, metapaths)
             # taking old nodes
             if hasattr(kwargs, "old_model"):
-                old_nodes_typed = self._select_old_nodes(kwargs.old_model, old_nodes, target_type)
+                old_data = k_hop_subgraph(data, target_type, old_nodes[target_type], 2)[0].to(data.x_dict[target_type].device)
+                old_nodes_typed = self._select_old_nodes(kwargs.old_model, old_data, target_type)
             else:
                 old_nodes_typed = self._initialize_split_dict(data, dtype=torch.tensor)
             # adding them to the mask
@@ -36,7 +39,7 @@ class DyHANE(AbstractStrategy):
                     (new_nodes_typed[n_type].to(torch.int), old_nodes_typed[n_type].to(torch.int)))
 
             # applying sampling mask to the data generating a split ready for the training
-            result.append(data.subgraph(sampling_mask))
+            result.append((data.subgraph(sampling_mask), sampling_mask))
 
         return result
 

@@ -9,10 +9,10 @@ class FullRetraining(GenericERS2):
         super(GenericERS2, self).__init__()
         self.needs_previous_model = False
 
-    def _select_new_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type):
+    def _select_new_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type, kwargs=None):
         return self._select_nodes(data, new_nodes)
 
-    def _select_old_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type):
+    def _select_old_nodes(self, split, n_split, data, new_nodes, old_nodes, target_type, kwargs=None):
         return self._select_nodes(data, old_nodes)
 
     def _select_nodes(self, data, nodes):

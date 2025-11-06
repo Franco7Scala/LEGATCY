@@ -25,15 +25,16 @@ from src.trainer import train, evaluate
 
 
 # experiment setting parameters
+debug = True
 dataset_name = "imdb"
 n_snapshot = 3
 k_hop_subgraph = 2
 training_strategy = DyHANE      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
 sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = None #500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
+k = None                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 
 # training parameters
-n_epochs = 200
+n_epochs = 1
 max_lr = 0.01
 min_lr = 0.001
 
@@ -49,12 +50,12 @@ dropout = 0.3
 kwargs = Kwargs()
 warnings.filterwarnings("ignore")
 device = utils.get_device()
-root_dir = os.path.join(get_base_dir(), dataset_name, "results", str(get_time_in_millis()))
+root_dir = os.path.join(get_base_dir(), dataset_name, "results_debug" if debug else "results", str(get_time_in_millis()))
 os.makedirs(root_dir, exist_ok=True)
 cprint(f"Saving results in '{root_dir}'", Color.EXPERIMENT_CONFIG_INFO)
 
 std_out = sys.stdout
-sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
+#sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
 
 cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
