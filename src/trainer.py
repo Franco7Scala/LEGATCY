@@ -15,7 +15,7 @@ def train(model, all_data, new_nodes, old_nodes, optimizer, criterion, scheduler
     for epoch in progress_bar:
         model.train()
         optimizer.zero_grad()
-        data = data_splits[epoch][0]
+        data = data_splits[int(epoch%n_split)][0]
         train_data = k_hop_subgraph(data, target_type, mask_to_index(data[target_type].train_mask), 2)[0].to(data.x_dict[target_type].device)
         out = model(train_data.x_dict, train_data.edge_index_dict)
         loss = criterion(out[target_type], train_data[target_type].y)
