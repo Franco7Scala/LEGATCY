@@ -8,8 +8,9 @@ from src.support.utils import compute_auc
 from src.support.utils_graph import k_hop_subgraph
 
 
-def train(model, all_data, new_nodes, old_nodes, optimizer, criterion, scheduler, target_type, run, strategy, directory, n_epochs=200, kwargs=None):
-    data_splits = strategy.sample(n_epochs, all_data, new_nodes, old_nodes, target_type, kwargs)
+def train(model, all_data, new_nodes, old_nodes, optimizer, criterion, scheduler, target_type, run, strategy, directory, reduction_factor, n_epochs=200, kwargs=None):
+    n_split = int(reduction_factor * n_epochs)
+    data_splits = strategy.sample(n_split, all_data, new_nodes, old_nodes, target_type, kwargs)
     progress_bar = tqdm(range(n_epochs))
     for epoch in progress_bar:
         model.train()
