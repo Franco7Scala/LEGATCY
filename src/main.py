@@ -32,9 +32,10 @@ k_hop_subgraph = 2
 training_strategy = DyHANE      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
 sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 k = None                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
+reduction_factor = 0.2
 
 # training parameters
-n_epochs = 200
+n_epochs = 1
 max_lr = 0.01
 min_lr = 0.001
 
@@ -115,7 +116,6 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
         cprint(f"Building model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         model = HeteroGAT(
             metadata=data.metadata(),
-            target_type=target_type,
             hidden_channels=hidden_channels,
             out_channels=num_classes,
             dropout=dropout,
@@ -143,7 +143,7 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
         if k is not None:
             strategy.k = k
 
-        model = train(model, data, new_nodes, old_nodes, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, n_epochs=n_epochs, kwargs=kwargs)
+        model = train(model, data, new_nodes, old_nodes, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, reduction_factor=reduction_factor, n_epochs=n_epochs, kwargs=kwargs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
 
         f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, target_type, run, directory=output_dir)
