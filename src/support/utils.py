@@ -35,8 +35,8 @@ def get_device():
 
 
 def get_base_dir():
-    return '/home/martirano/data'
-    #return '/home/scala/projects/GNN_ContinualLearning/data'
+    #return '/home/martirano/data'
+    return '/home/scala/projects/GNN_ContinualLearning/data'
 
 
 def get_metapaths(dataset_name):

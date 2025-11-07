@@ -16,7 +16,8 @@ class DyHANE(AbstractStrategy):
     def __init__(self):
         super(DyHANE, self).__init__()
 
-    def sample(self, n_split, data, new_nodes, old_nodes, target_type, kwargs=None):
+    def sample(self, n_split, data, new_nodes, old_nodes, kwargs=None):
+        target_type = data.target_type
         result = []
         # iterating over all the splits to generate
         for split in range(n_split):
@@ -147,7 +148,7 @@ class DyHANE(AbstractStrategy):
                                 self._safe_add(node_dict, target_type).update(dsts[srcs == node].tolist())
                                 self._safe_add(node_dict, target_type).update(srcs[dsts == node].tolist())
 
-        return {ntype: torch.tensor(list(ids)).to(data[data.node_types[0]].x.device) for ntype, ids in node_dict.items()}
+        return {ntype: torch.tensor(list(ids)).to(data.device) for ntype, ids in node_dict.items()}
 
 
     def _get_explainer(self, model, data, target_type):

@@ -29,9 +29,9 @@ debug = True
 dataset_name = "imdb"
 n_snapshot = 3
 k_hop_subgraph = 2
-training_strategy = DyHANE      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
+training_strategy = VotingStrategy      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
 sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = None                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
+k = 500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 reduction_factor = 0.2
 
 # training parameters
@@ -74,7 +74,7 @@ cprint(f"Experiment config:\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 cprint(f"Loading dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, n_snapshot=n_snapshot, k=k_hop_subgraph)
+data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, n_snapshot=n_snapshot, k=k_hop_subgraph, device=device)
 data = data.to(device)
 
 for idx_snapshot, snapshot in enumerate(snapshot_masks):
@@ -116,6 +116,7 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
         cprint(f"Building model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         model = HeteroGAT(
             metadata=data.metadata(),
+            target_type=target_type,
             hidden_channels=hidden_channels,
             out_channels=num_classes,
             dropout=dropout,
@@ -143,10 +144,10 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
         if k is not None:
             strategy.k = k
 
-        model = train(model, data, new_nodes, old_nodes, optimizer, criterion, scheduler, target_type, run, strategy, directory=output_dir, reduction_factor=reduction_factor, n_epochs=n_epochs, kwargs=kwargs)
+        model = train(model, data, new_nodes, old_nodes, optimizer, criterion, scheduler, run, strategy, directory=output_dir, reduction_factor=reduction_factor, n_epochs=n_epochs, kwargs=kwargs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
 
-        f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, target_type, run, directory=output_dir)
+        f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, run, directory=output_dir)
         elapsed_time = get_time_in_millis() - start_time
         cprint(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, roc-auc: {auc:.3f}, precision: {[{' '.join('{:.5f}'.format(x) for x in precision)}]}, recall: {[{' '.join('{:.5f}'.format(x) for x in recall)}]}, time: {elapsed_time}", Color.EXPERIMENT_OUTPUT)
 

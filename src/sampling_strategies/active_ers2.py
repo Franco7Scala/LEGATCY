@@ -14,35 +14,35 @@ class ActiveERS2(BasicERS2):
         self.k = k
         self.splits = []
 
-    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, target_type, kwargs=None):
+    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, kwargs=None):
         if current_split == 0:
-            self._calculate_splits(tot_split, data, old_nodes, target_type, kwargs)
+            self._calculate_splits(tot_split, data, old_nodes, kwargs)
 
         if len(self.splits) <= current_split:
             return self._initialize_split_dict(data, torch.tensor)
 
         return self.splits[current_split]
 
-    def _calculate_splits(self, tot_split, data, old_nodes, target_type, kwargs):
+    def _calculate_splits(self, tot_split, data, old_nodes, kwargs):
         scores_nodes_of_type = []
         # iterating over all types of nodes
         for i in range(len(data.node_stores)):
             # iterating over all nodes of type to calculate the score
             for j in range(data.node_stores[i]["x"].shape[0]):
-                if data.node_types[i] == target_type and not data[target_type].train_mask[j]:
+                if data.node_types[i] == data.target_type and not data[data.target_type].train_mask[j]:
                     continue
 
                 if j in old_nodes[data.node_types[i]]:
                     subset_dict = {}
                     for node_type in data.node_types:
                         if node_type == data.node_types[i]:
-                            subset_dict[node_type] = torch.tensor([j]).to(torch.int).to(data[data.node_types[0]].x.device)
+                            subset_dict[node_type] = torch.tensor([j]).to(torch.int).to(data.device)
 
                         else:
-                            subset_dict[node_type] = torch.tensor([]).to(torch.int).to(data[data.node_types[0]].x.device)
+                            subset_dict[node_type] = torch.tensor([]).to(torch.int).to(data.device)
 
-                    subgraph = self._extract_subgraph(data, target_type, subset_dict)
-                    score = self.al_technique.get_score(subgraph, target_type)
+                    subgraph = self._extract_subgraph(data, subset_dict)
+                    score = self.al_technique.get_score(subgraph, data.target_type)
                     scores_nodes_of_type.append((data.node_types[i], j, score))
 
         # sorting nodes keeping index and related score
@@ -63,7 +63,7 @@ class ActiveERS2(BasicERS2):
                 # converting lists to tensors
                 tensored_split = {}
                 for key in current_split.keys():
-                    tensored_split[key] = torch.tensor(current_split[key]).to(data[data.node_types[0]].x.device).to(torch.int)
+                    tensored_split[key] = torch.tensor(current_split[key]).to(data.device).to(torch.int)
 
                 # adding split to the splits set
                 splits.append(tensored_split)
@@ -75,13 +75,13 @@ class ActiveERS2(BasicERS2):
         else:
             self.splits = [self._initialize_split_dict(data, torch.tensor)]
 
-    def _extract_subgraph(self, data, target_type, subset_dict):
+    def _extract_subgraph(self, data, subset_dict):
         path_subgraph = f"{self.subgraphs_dir}/{predictable_hash(str(subset_dict))}.sg"
         if os.path.exists(path_subgraph):
             subgraph = torch.load(path_subgraph, weights_only=False)
 
         else:
-            subgraph = k_hop_subgraph(data, target_type, subset_dict[target_type], 2).to(data[data.node_types[0]].x.device)
+            subgraph = k_hop_subgraph(data, subset_dict[data.target_type], 2).to(data.device)
             torch.save(subgraph, path_subgraph)
 
         return subgraph

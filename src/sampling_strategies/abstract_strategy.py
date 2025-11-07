@@ -16,7 +16,7 @@ class AbstractStrategy:
                 result[node_type] = []
 
             elif dtype == torch.tensor:
-                result[node_type] = torch.tensor([], dtype=torch.int).to(data[data.node_types[0]].x.device)
+                result[node_type] = torch.tensor([], dtype=torch.int).to(data.device)
 
             else:
                 raise ValueError("Type not allowed!")

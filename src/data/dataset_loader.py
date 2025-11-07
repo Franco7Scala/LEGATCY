@@ -9,7 +9,7 @@ from src.support.utils_graph import k_hop_subgraph
 from support.utils import get_metapaths
 
 
-def load_dataset(dataset_name, n_snapshot, k):
+def load_dataset(dataset_name, n_snapshot, k, device):
     path = os.path.join(get_base_dir(), dataset_name)
     snapshot_masks = []
 
@@ -26,11 +26,13 @@ def load_dataset(dataset_name, n_snapshot, k):
 
     dataset.data.mps = get_metapaths(dataset_name)
     dataset.data.target_type = target_type
+    dataset.data.to(device)
+    dataset.data.device = dataset.data.x_dict[dataset.data.target_type].device
 
     size = dataset.data[target_type].x.shape[0]
     for i in range(n_snapshot):
         mask = torch.arange(0, size)
         mask = mask[int(i * size / n_snapshot): int((i + 1) * size / n_snapshot)]
-        snapshot_masks.append(k_hop_subgraph(dataset.data, target_type, mask, k)[1])
+        snapshot_masks.append(k_hop_subgraph(dataset.data, mask, k)[1])
 
     return dataset.data, target_type, snapshot_masks
