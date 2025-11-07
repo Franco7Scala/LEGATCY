@@ -14,74 +14,27 @@ class ActiveERS2(BasicERS2):
         self.k = k
         self.splits = []
 
-    def _select_old_nodes(self, current_split, tot_split, data, new_nodes, old_nodes, kwargs=None):
+    def _select_old_nodes(self, current_split, n_split, data, new_nodes, old_nodes, kwargs=None):
         if current_split == 0:
-            self._calculate_splits(tot_split, data, old_nodes, kwargs)
+            self._calculate_splits(n_split, data, old_nodes)
 
         if len(self.splits) <= current_split:
             return self._initialize_split_dict(data, torch.tensor)
 
         return self.splits[current_split]
 
-    def _calculate_splits(self, tot_split, data, old_nodes, kwargs):
-        scores_nodes_of_type = []
-        # iterating over all types of nodes
-        for i in range(len(data.node_stores)):
-            # iterating over all nodes of type to calculate the score
-            for j in range(data.node_stores[i]["x"].shape[0]):
-                if data.node_types[i] == data.target_type and not data[data.target_type].train_mask[j]:
-                    continue
-
-                if j in old_nodes[data.node_types[i]]:
-                    subset_dict = {}
-                    for node_type in data.node_types:
-                        if node_type == data.node_types[i]:
-                            subset_dict[node_type] = torch.tensor([j]).to(torch.int).to(data.device)
-
-                        else:
-                            subset_dict[node_type] = torch.tensor([]).to(torch.int).to(data.device)
-
-                    subgraph = self._extract_subgraph(data, subset_dict)
-                    score = self.al_technique.get_score(subgraph, data.target_type)
-                    scores_nodes_of_type.append((data.node_types[i], j, score))
-
-        # sorting nodes keeping index and related score
-        sorted_indices = sorted(range(len(scores_nodes_of_type)), key=lambda j: scores_nodes_of_type[j][2], reverse=False)
-        scores_nodes_of_type = [scores_nodes_of_type[j] for j in sorted_indices]
-        # generating splits
-        selected_nodes = scores_nodes_of_type[:self.k]
-        split_size = int(len(selected_nodes)/tot_split)
-        splits = []
-        current_split = self._initialize_split_dict(data, list)
-        # iterating over all the selected nodes
-        for i in range(len(selected_nodes)):
-            current_type = selected_nodes[i][0]
-            current_index = selected_nodes[i][1]
-            current_split[current_type].append(current_index)
-            # checking if split reach the target size
-            if sum([len(current_split[val]) for val in current_split.keys()]) >= split_size:
-                # converting lists to tensors
-                tensored_split = {}
-                for key in current_split.keys():
-                    tensored_split[key] = torch.tensor(current_split[key]).to(data.device).to(torch.int)
-
-                # adding split to the splits set
-                splits.append(tensored_split)
-                current_split = self._initialize_split_dict(data)
-
-        if len(splits) > 0:
-            self.splits = splits
-
-        else:
+    def _calculate_splits(self, n_split, data, old_nodes):
+        if len(old_nodes[data.target_type]) <= 0:
             self.splits = [self._initialize_split_dict(data, torch.tensor)]
 
-    def _extract_subgraph(self, data, subset_dict):
-        path_subgraph = f"{self.subgraphs_dir}/{predictable_hash(str(subset_dict))}.sg"
-        if os.path.exists(path_subgraph):
-            subgraph = torch.load(path_subgraph, weights_only=False)
-
         else:
-            subgraph = k_hop_subgraph(data, subset_dict[data.target_type], 2).to(data.device)
-            torch.save(subgraph, path_subgraph)
+            node_scores = []
+            node_subgraph = k_hop_subgraph(data, old_nodes[data.target_type], 2)[0].to(data.device)
+            scores = self.al_technique.get_score(node_subgraph, data.target_type)
+            for idx, score in enumerate(scores):
+                node_scores.append((old_nodes[data.target_type][idx].item(), score))
 
-        return subgraph
+            # sorting nodes keeping index and related score
+            selected_nodes = sorted(range(len(node_scores)), key=lambda j: node_scores[j][1], reverse=True)[:self.k]
+            # generating splits
+            self.splits = self._split_selected_nodes(data, torch.tensor(selected_nodes).to(data.device), n_split)

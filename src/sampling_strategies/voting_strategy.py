@@ -60,13 +60,3 @@ class VotingStrategy(BasicERS2):
             selected_nodes.extend(clusters[cluster][:n_to_sample])
 
         return selected_nodes
-
-    def _split_selected_nodes(self, data, selected_nodes, n_split):
-        result = []
-        split_size = int(len(selected_nodes) / n_split)
-        for split in range(n_split):
-            sampling_mask = self._initialize_split_dict(data, torch.tensor)
-            sampling_mask[data.target_type] = selected_nodes[split_size * split: split_size * (split + 1)]
-            result.append(sampling_mask)
-
-        return result

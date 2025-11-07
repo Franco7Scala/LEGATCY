@@ -29,8 +29,8 @@ debug = True
 dataset_name = "imdb"
 n_snapshot = 3
 k_hop_subgraph = 2
-training_strategy = VotingStrategy      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
-sampling_technique = None               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+training_strategy = ActiveERS2      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
+sampling_technique = LCSALTechnique               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 k = 500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 reduction_factor = 0.2
 
