@@ -24,21 +24,15 @@ class VotingStrategy(BasicERS2):
 
     def _calculate_splits(self, n_split, data, old_nodes, kwargs):
         embeddings = {}
-
-        if len(old_nodes[data.target_type]) > 0:
-            embedding = kwargs.old_model(data.x_dict, data.edge_index_dict, embeddings_only=True)
-
-        for j in old_nodes[data.target_type]:
-            # TODO fare tutto in un unico forward pass
-            # TODO sistemare il target type che ora è nel data
-            node_subgraph = k_hop_subgraph(data, torch.tensor([j]), 2)[0].to(data.device)
-            embedding = kwargs.old_model(node_subgraph.x_dict, node_subgraph.edge_index_dict, embeddings_only=True)
-            embeddings[embedding[data.target_type][0]] = j.item()
-
-        if len(embeddings) == 0:
+        if len(old_nodes[data.target_type]) <= 0:
             self.splits = [self._initialize_split_dict(data, torch.tensor)]
 
         else:
+            node_subgraph = k_hop_subgraph(data, old_nodes[data.target_type], 2)[0].to(data.device)
+            computed_embeddings = kwargs.old_model(node_subgraph.x_dict, node_subgraph.edge_index_dict, embeddings_only=True)
+            for idx, embedding in enumerate(computed_embeddings[data.target_type]):
+                embeddings[embedding] = old_nodes[data.target_type][idx].item()
+
             nodes = self._clusterize_embeddings(embeddings)
             selected_nodes = self._sample_from_clusters(nodes)
             self.splits = self._split_selected_nodes(data, torch.tensor(selected_nodes).to(data.device), n_split)
@@ -67,12 +61,12 @@ class VotingStrategy(BasicERS2):
 
         return selected_nodes
 
-    def _split_selected_nodes(self, data, supplementary_nodes, n_split):
+    def _split_selected_nodes(self, data, selected_nodes, n_split):
         result = []
-        split_size = int(len(supplementary_nodes) / n_split)
+        split_size = int(len(selected_nodes) / n_split)
         for split in range(n_split):
             sampling_mask = self._initialize_split_dict(data, torch.tensor)
-            sampling_mask[data.target_type] = supplementary_nodes[split_size * split : split_size * (split+1)]
+            sampling_mask[data.target_type] = selected_nodes[split_size * split: split_size * (split + 1)]
             result.append(sampling_mask)
 
         return result
