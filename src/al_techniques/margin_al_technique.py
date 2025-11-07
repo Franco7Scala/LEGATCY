@@ -6,8 +6,8 @@ from src.support.utils import get_time_in_millis
 
 class MarginALTechnique(AbstractALTechnique):
 
-    def get_score(self, sample, target_type):
-        preds = torch.nn.functional.softmax(self.model(sample.x_dict, sample.edge_index_dict)[target_type], dim=1)
+    def get_score(self, samples, target_type):
+        preds = torch.nn.functional.softmax(self.model(samples.x_dict, samples.edge_index_dict)[target_type], dim=1)
         preds_argmax = torch.argmax(preds, dim=1)
         max_preds = preds[torch.ones(preds.shape[0], dtype=bool), preds_argmax].clone()
         preds[torch.ones(preds.shape[0], dtype=bool), preds_argmax] = -1.0

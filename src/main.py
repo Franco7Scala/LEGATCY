@@ -25,17 +25,17 @@ from src.trainer import train, evaluate
 
 
 # experiment setting parameters
-debug = True
+debug = False
 dataset_name = "imdb"
 n_snapshot = 3
 k_hop_subgraph = 2
-training_strategy = ActiveERS2      # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
-sampling_technique = LCSALTechnique               # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+training_strategy = VotingStrategy          # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
+sampling_technique = None  # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 k = 500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
-reduction_factor = 0.2
+reduction_factor = 0.5                  # it identifies how many splits to create during the training between [0, 1] higher means less splits
 
 # training parameters
-n_epochs = 1
+n_epochs = 200
 max_lr = 0.01
 min_lr = 0.001
 
@@ -56,7 +56,7 @@ os.makedirs(root_dir, exist_ok=True)
 cprint(f"Saving results in '{root_dir}'", Color.EXPERIMENT_CONFIG_INFO)
 
 std_out = sys.stdout
-#sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
+sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
 
 cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
@@ -78,7 +78,7 @@ data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, n_sn
 data = data.to(device)
 
 for idx_snapshot, snapshot in enumerate(snapshot_masks):
-    cprint(f"Working on snapshot n.{idx_snapshot}...", Color.EXPERIMENT_CONFIG_INFO)
+    cprint(f"Working on snapshot n.{idx_snapshot + 1}...", Color.EXPERIMENT_CONFIG_INFO)
     subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{idx_snapshot}")
     os.makedirs(subgraphs_dir, exist_ok=True)
     kwargs.subgraphs_dir = subgraphs_dir
@@ -165,7 +165,7 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     data_frame["ROC-AUC"] = l_auc
     data_frame["time"] = l_times
     processing_results(data_frame).to_excel(os.path.join(output_dir, "results.xlsx"), index=False)
-    cprint(f"Completed snapshot n.{idx_snapshot}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+    cprint(f"Completed snapshot n.{idx_snapshot + 1}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
 
 cprint(f"Completed!", Color.OTHER)
 
