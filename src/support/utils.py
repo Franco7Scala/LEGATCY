@@ -35,8 +35,8 @@ def get_device():
 
 
 def get_base_dir():
-    #return '/home/martirano/data'
-    return '/home/scala/projects/GNN_ContinualLearning/data'
+    return '/home/martirano/data'
+    #return '/home/scala/projects/GNN_ContinualLearning/data'
 
 
 def get_metapaths(dataset_name):
@@ -54,6 +54,18 @@ def get_metapaths(dataset_name):
                       ('actor', 'to', 'movie')], # MAM
                      [('movie', 'to', 'director'),
                       ('director', 'to', 'movie')]] #MDM
+
+    elif dataset_name.lower() == "dblp":
+        metapaths = [[('author', 'to', 'paper'),
+                      ('paper', 'to', 'author')], # APA
+                     [('author', 'to', 'paper'),
+                      ('paper', 'to', 'conference'),
+                      ('conference', 'to', 'paper'),
+                      ('paper', 'to', 'author')], #APCPA
+                     [('author', 'to', 'paper'),
+                      ('paper', 'to', 'term'),
+                      ('term', 'to', 'paper'),
+                      ('paper', 'to', 'author')]] #APTPA
 
     else:
         raise Exception("no metapaths defined for this dataset! Cretina!")

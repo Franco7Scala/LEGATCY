@@ -19,7 +19,7 @@ def load_dataset(dataset_name, n_snapshot, k, device):
 
     elif dataset_name.lower() == "dblp".lower():
         dataset = DBLP(path)
-        target_type = "paper"
+        target_type = "author"
 
     else:
         raise Exception(f"Unknown dataset '{dataset_name}'!")

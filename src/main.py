@@ -26,7 +26,7 @@ from src.trainer import train, evaluate
 
 # experiment setting parameters
 debug = False
-dataset_name = "imdb"
+dataset_name = "dblp"
 n_snapshot = 3
 k_hop_subgraph = 2
 training_strategy = VotingStrategy          # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
