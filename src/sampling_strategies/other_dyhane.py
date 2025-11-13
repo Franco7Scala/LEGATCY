@@ -5,16 +5,18 @@ from torch_geometric.nn import to_hetero
 
 from data.data_utils import create_nodes_dict_empty
 from sampling_strategies.abstract_strategy import AbstractStrategy
+from sampling_strategies.basic_ers2 import BasicERS2
 from support.utils import get_metapaths, get_device
 from support.utils_graph import extract_edges
 
 from src.support.utils_graph import k_hop_subgraph
 
 
-class DyHANE(AbstractStrategy):
+class DyHANE(BasicERS2):
 
-    def __init__(self):
+    def __init__(self, k=0):
         super(DyHANE, self).__init__()
+        self.k = k
 
     def sample(self, n_split, data, new_nodes, old_nodes, kwargs=None):
         target_type = data.target_type
@@ -27,11 +29,11 @@ class DyHANE(AbstractStrategy):
 
             new_edges = extract_edges(data, new_nodes) # these are the edges incident to at least one new node
 
-            new_nodes_typed = self._select_new_nodes(data, new_edges, metapaths)
+            new_nodes_typed = self._select_new_nodes(1, n_split, data, new_nodes, old_nodes, kwargs)
             # taking old nodes
             if hasattr(kwargs, "old_model"):
-                old_data = k_hop_subgraph(data, target_type, old_nodes[target_type], 2)[0].to(data.x_dict[target_type].device)
-                old_nodes_typed = self._select_old_nodes(kwargs.old_model, old_data, target_type)
+                old_data = k_hop_subgraph(data, old_nodes[target_type], 2)[0].to(data.device)
+                old_nodes_typed = self._select_old_nodes(kwargs.old_model, old_data)
             else:
                 old_nodes_typed = self._initialize_split_dict(data, dtype=torch.tensor)
             # adding them to the mask
@@ -59,7 +61,8 @@ class DyHANE(AbstractStrategy):
     Returns: dict { node_type: [node_ids] }
     """
     # TODO NOTA: sono i "nuovi" nuovi nodi --- cioè i nodi completamente nuovi e quelli aggiornati
-    def _select_new_nodes(self, data: HeteroData, new_edges, metapaths):
+
+    def _select_new_nodes_che_non_serve(self, data: HeteroData, new_edges, metapaths):
 
         node_dict = {}
         target_type = data.target_type
@@ -140,7 +143,7 @@ class DyHANE(AbstractStrategy):
                         if rel[2] == dst_type:
                             self._safe_add(node_dict, rel[0]).update(srcs[dsts == v].tolist())
 
-                    # meta-path neighbors for authors
+                    # meta-path neighbors for target type
                     for node, ntype in [(u, src_type), (v, dst_type)]:
                         if ntype == target_type:
                             for meta_key in metapath_edges.keys():
@@ -170,10 +173,16 @@ class DyHANE(AbstractStrategy):
         return explainer
 
     #nota: sono i nodi più "significativi" del vecchio modello
-    def _select_old_nodes(self, old_model, old_data, target_type, buffer_size=768, topk=64):
+    def _select_old_nodes(self, old_model, old_data): # buffer_size=768, topk=64
 
-        old_nodes = {}
+        old_nodes = self._initialize_split_dict(old_data, dtype=torch.tensor)
 
+        target_type = old_data.target_type
+        explanation = self._get_explainer(old_model, old_data, target_type)
+        values, indices = torch.topk(explanation.node_mask_dict[target_type].sum(-1), k=self.k)
+        old_nodes[target_type] = indices  # .cpu().numpy().tolist()
+
+        """
         n_types = list(old_data.x_dict.keys())
         percs = [0] * len(n_types)
         explanation = self._get_explainer(old_model, old_data, target_type)
@@ -190,6 +199,7 @@ class DyHANE(AbstractStrategy):
         for i, nt in enumerate(n_types):
             values, indices = torch.topk(explanation.node_mask_dict[nt].sum(-1), k=rates[i])
             old_nodes[nt] = indices #.cpu().numpy().tolist()
+        """
 
         return old_nodes
 
