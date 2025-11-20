@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn as nn
 
 from torch_geometric.datasets import IMDB
 from torch_geometric.datasets.dblp import DBLP
@@ -23,6 +24,16 @@ def load_dataset(dataset_name, n_snapshot, k, device):
 
     else:
         raise Exception(f"Unknown dataset '{dataset_name}'!")
+
+    in_dim = 128
+    embeddings = nn.ModuleDict()
+    for ntype in dataset.data.metadata()[0]:  # metadata()[0] returns node types list
+        if 'x' not in dataset.data[ntype]:
+
+            num_nodes = dataset.data[ntype].num_nodes
+            dataset.data[ntype].x = torch.zeros((num_nodes, in_dim), device=device)
+            #dataset.data[ntype].x = nn.Embedding(num_nodes, in_dim)(torch.arange(num_nodes)).detach()
+
 
     dataset.data.mps = get_metapaths(dataset_name)
     dataset.data.target_type = target_type
