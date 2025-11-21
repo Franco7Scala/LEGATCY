@@ -1,10 +1,11 @@
-from sys import meta_path
-
 import torch
 import os
 import time
 import numpy
 import pandas as pd
+import copy
+
+from sys import meta_path
 from statistics import stdev
 from enum import Enum
 from sklearn.preprocessing import label_binarize
@@ -35,8 +36,8 @@ def get_device():
 
 
 def get_base_dir():
-    return '/home/martirano/data'
-    #return '/home/scala/projects/GNN_ContinualLearning/data'
+    #return '/home/martirano/data'
+    return '/home/scala/projects/GNN_ContinualLearning/data'
 
 
 def get_metapaths(dataset_name):
@@ -102,9 +103,9 @@ def compute_weights(targets):
     weights /= weights.sum() ## Normalize the weights so they sum to 1 (optional)
 
     # Print information for debugging
-    for i, count in enumerate(class_counts):
-        print(f"Number of class {i}: {count.item()}")
-    print(f"Computed weights: {weights}")
+    # for i, count in enumerate(class_counts):
+    #     print(f"Number of class {i}: {count.item()}")
+    # print(f"Computed weights: {weights}")
 
     return weights
 
@@ -177,6 +178,26 @@ def predictable_hash(text:str):
     hash = ( hash * 281 ^ ord(ch) * 997 ) & 0xFFFFFFFF
 
   return hash
+
+
+def merge_masks(masks):
+    if len(masks) == 0:
+        return []
+
+    if len(masks) == 1:
+        masks[0]
+
+    merged_mask = copy.deepcopy(masks[0])
+    for mask in masks[1:]:
+        for key in merged_mask:
+            merged_mask[key] = torch.cat((merged_mask[key], mask[key]), dim=0)
+
+    return merged_mask
+
+
+def print_samples_count(nodes_dict):
+    for node_type in nodes_dict:
+        cprint(f"- Class {node_type}: {len(nodes_dict[node_type])} samples", Color.EXPERIMENT_CONFIG_INFO)
 
 
 def plot(X, labels, probabilities=None, parameters=None, ground_truth=False, ax=None):

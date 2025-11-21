@@ -19,20 +19,20 @@ from src.al_techniques.lcs_al_technique import LCSALTechnique
 from src.al_techniques.entropy_al_technique import EntropyALTechnique
 from src.support import utils
 from src.support.focal_loss import FocalLoss
-from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs, compute_weights
+from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs, compute_weights, merge_masks, print_samples_count
 from src.data.data_utils import create_nodes_dict_empty
 from src.trainer import train, evaluate
 
 
 # experiment setting parameters
-debug = False
-dataset_name = "dblp"
+debug = True
+dataset_name = "imdb"
 n_snapshot = 3
 k_hop_subgraph = 2
-training_strategy = VotingStrategy          # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
-sampling_technique = None  # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = 500                                 # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
-reduction_factor = 0.5                  # it identifies how many splits to create during the training between [0, 1] higher means less splits
+training_strategy = FullRetraining          # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
+sampling_technique = None                   # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+k = None                                    # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
+reduction_factor = 0.5                      # it identifies how many splits to create during the training between [0, 1] higher means less splits
 
 # training parameters
 n_epochs = 200
@@ -56,7 +56,12 @@ os.makedirs(root_dir, exist_ok=True)
 cprint(f"Saving results in '{root_dir}'", Color.EXPERIMENT_CONFIG_INFO)
 
 std_out = sys.stdout
-sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
+if debug:
+    n_epochs = 1
+    training_seeds = training_seeds[:2]
+
+else:
+    sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
 
 cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
@@ -87,17 +92,19 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     strategy = training_strategy()
     new_nodes = snapshot_masks[idx_snapshot]
     if idx_snapshot != 0:
-        old_nodes = snapshot_masks[idx_snapshot - 1]
+        old_nodes = merge_masks(snapshot_masks[:idx_snapshot])
 
     else:
         old_nodes = create_nodes_dict_empty(data)
 
     num_classes = len(torch.unique(data[target_type].y))
-    class_distribution = get_class_distribution(data, target_type)
-    for i, count in enumerate(class_distribution):
-        print(f"Samples' number of class {i}: {count.item()}")
-
     cprint(f"Number of classes: {num_classes}", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
+
+    cprint(f"Number of new samples per class:", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
+    print_samples_count(new_nodes)
+    cprint(f"Number of old samples per class:", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
+    print_samples_count(old_nodes)
+
     previous_output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot-1}")
     output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot}")
     os.makedirs(output_dir, exist_ok=True)
