@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from torch_geometric.datasets import IMDB
 from torch_geometric.datasets.dblp import DBLP
+from torch_geometric.transforms import AddMetaPaths
 from src.data.data_utils import create_nodes_dict_empty
 from src.support.utils import get_base_dir
 from src.support.utils_graph import k_hop_subgraph
@@ -35,7 +36,9 @@ def load_dataset(dataset_name, n_snapshot, k, device):
             #dataset.data[ntype].x = nn.Embedding(num_nodes, in_dim)(torch.arange(num_nodes)).detach()
 
 
-    dataset.data.mps = get_metapaths(dataset_name)
+    metapaths = get_metapaths(dataset_name)
+    dataset.data.mps = metapaths
+    dataset.data = AddMetaPaths(metapaths=metapaths, weighted=True)(dataset.data)
     dataset.data.target_type = target_type
     dataset.data.to(device)
     dataset.data.device = dataset.data.x_dict[dataset.data.target_type].device
