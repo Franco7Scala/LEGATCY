@@ -11,7 +11,7 @@ from src.support.utils_graph import k_hop_subgraph
 from support.utils import get_metapaths
 
 
-def load_dataset(dataset_name, n_snapshot, k, device):
+def load_dataset(dataset_name, metapaths_enabled, n_snapshot, k, device):
     path = os.path.join(get_base_dir(), dataset_name)
     snapshot_masks = []
 
@@ -38,7 +38,8 @@ def load_dataset(dataset_name, n_snapshot, k, device):
 
     metapaths = get_metapaths(dataset_name)
     dataset.data.mps = metapaths
-    dataset.data = AddMetaPaths(metapaths=metapaths, weighted=True)(dataset.data)
+    if metapaths_enabled:
+        dataset.data = AddMetaPaths(metapaths=metapaths, weighted=True)(dataset.data)
     dataset.data.target_type = target_type
     dataset.data.to(device)
     dataset.data.device = dataset.data.x_dict[dataset.data.target_type].device

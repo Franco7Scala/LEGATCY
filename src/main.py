@@ -25,11 +25,12 @@ from src.trainer import train, evaluate
 
 
 # experiment setting parameters
-debug = True
-dataset_name = "imdb"
-n_snapshot = 3
+debug = False
+dataset_name = "dblp"
+n_snapshot = 4
+metapaths_enabled = False
 k_hop_subgraph = 2
-training_strategy = FullRetraining          # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
+training_strategy = DyHANE         # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
 sampling_technique = None                   # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
 k = None                                    # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 reduction_factor = 0.5                      # it identifies how many splits to create during the training between [0, 1] higher means less splits
@@ -60,11 +61,12 @@ if debug:
     n_epochs = 1
     training_seeds = training_seeds[:2]
 
-else:
-    sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
+#else:
+#    sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
 
 cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
+       f"- metapaths: {metapaths_enabled}\n"
        f"- n epochs: {n_epochs}\n"
        f"- k: {k}\n"
        f"- max lr: {max_lr}\n"
@@ -79,7 +81,7 @@ cprint(f"Experiment config:\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 cprint(f"Loading dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, n_snapshot=n_snapshot, k=k_hop_subgraph, device=device)
+data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, metapaths_enabled=metapaths_enabled, n_snapshot=n_snapshot, k=k_hop_subgraph, device=device)
 data = data.to(device)
 
 for idx_snapshot, snapshot in enumerate(snapshot_masks):
