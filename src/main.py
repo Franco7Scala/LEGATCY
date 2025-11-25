@@ -24,10 +24,17 @@ from src.data.data_utils import create_nodes_dict_empty
 from src.trainer import train, evaluate
 
 
+# TODO primo snapshot piu grande e poi tanti piu piccoli
+# TODO fare script per avviare tutti gli esperimenti in automitico (in una cartella specifica)
+# TODO sistemare evaluation su cose del futuro
+# TODO rivedere la procedura di training ed eventualmente sistemarla
+
+
 # experiment setting parameters
 debug = False
 dataset_name = "dblp"
 n_snapshot = 4
+times_fist_snapshot = 3
 metapaths_enabled = False
 k_hop_subgraph = 2
 training_strategy = DyHANE         # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
@@ -81,7 +88,7 @@ cprint(f"Experiment config:\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 cprint(f"Loading dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, metapaths_enabled=metapaths_enabled, n_snapshot=n_snapshot, k=k_hop_subgraph, device=device)
+data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, metapaths_enabled=metapaths_enabled, n_snapshot=n_snapshot, times_fist_snapshot=times_fist_snapshot, k=k_hop_subgraph, device=device)
 data = data.to(device)
 
 for idx_snapshot, snapshot in enumerate(snapshot_masks):
