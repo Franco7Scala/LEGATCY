@@ -402,10 +402,18 @@ def create_nodes_dict_full(data):
     return res
 
 
-def create_nodes_dict_empty(data):
-    res = {}
+def create_nodes_dict_empty(data, dtype=list):
+    result = {}
     for node_type in data.node_types:
-        res[node_type] = []
-    return res
+        if dtype == list:
+            result[node_type] = []
+
+        elif dtype == torch.tensor:
+            result[node_type] = torch.tensor([], dtype=torch.int).to(data.device)
+
+        else:
+            raise ValueError("Type not allowed!")
+
+    return result
 
 

@@ -2,6 +2,8 @@ import torch
 import random
 
 from sklearn.cluster import HDBSCAN
+
+from src.data.data_utils import create_nodes_dict_empty
 from src.sampling_strategies.basic_ers2 import BasicERS2
 from src.support.utils import plot
 from src.support.utils_graph import k_hop_subgraph
@@ -18,14 +20,14 @@ class VotingStrategy(BasicERS2):
             self._calculate_splits(n_split, data, old_nodes, kwargs)
 
         if len(self.splits) <= current_split:
-            return self._initialize_split_dict(data, torch.tensor)
+            return create_nodes_dict_empty(data, torch.tensor)
 
         return self.splits[current_split]
 
     def _calculate_splits(self, n_split, data, old_nodes, kwargs):
         embeddings = {}
         if len(old_nodes[data.target_type]) <= 0:
-            self.splits = [self._initialize_split_dict(data, torch.tensor)]
+            self.splits = [create_nodes_dict_empty(data, torch.tensor)]
 
         else:
             node_subgraph = k_hop_subgraph(data, old_nodes[data.target_type], 2)[0].to(data.device)

@@ -21,25 +21,24 @@ from src.support import utils
 from src.support.focal_loss import FocalLoss
 from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs, compute_weights, merge_masks, print_samples_count
 from src.data.data_utils import create_nodes_dict_empty
+from src.support.utils_graph import extract_evaluation_data
 from src.trainer import train, evaluate
 
 
-# TODO primo snapshot piu grande e poi tanti piu piccoli
 # TODO fare script per avviare tutti gli esperimenti in automitico (in una cartella specifica)
-# TODO sistemare evaluation su cose del futuro
-# TODO rivedere la procedura di training ed eventualmente sistemarla
+# TODO fare controllo del codice per vedere se funge tutto come dovrebbe
 
 
 # experiment setting parameters
-debug = False
-dataset_name = "dblp"
+debug = True
+dataset_name = "imdb"
 n_snapshot = 4
 times_fist_snapshot = 3
 metapaths_enabled = False
-k_hop_subgraph = 2
-training_strategy = DyHANE         # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
-sampling_technique = None                   # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = None                                    # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
+subgraph_hops = 2
+training_strategy = ActiveERS2         # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
+sampling_technique = RandomALTechnique                   # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
+k = 500                                    # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
 reduction_factor = 0.5                      # it identifies how many splits to create during the training between [0, 1] higher means less splits
 
 # training parameters
@@ -68,8 +67,8 @@ if debug:
     n_epochs = 1
     training_seeds = training_seeds[:2]
 
-#else:
-#    sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
+else:
+    sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
 
 cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
@@ -88,7 +87,7 @@ cprint(f"Experiment config:\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 cprint(f"Loading dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, metapaths_enabled=metapaths_enabled, n_snapshot=n_snapshot, times_fist_snapshot=times_fist_snapshot, k=k_hop_subgraph, device=device)
+data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, metapaths_enabled=metapaths_enabled, n_snapshot=n_snapshot, times_fist_snapshot=times_fist_snapshot, k=subgraph_hops, device=device)
 data = data.to(device)
 
 for idx_snapshot, snapshot in enumerate(snapshot_masks):
@@ -101,18 +100,18 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     strategy = training_strategy()
     new_nodes = snapshot_masks[idx_snapshot]
     if idx_snapshot != 0:
-        old_nodes = merge_masks(snapshot_masks[:idx_snapshot])
+        old_nodes = snapshot_masks[idx_snapshot - 1]
 
     else:
-        old_nodes = create_nodes_dict_empty(data)
+        old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
 
     num_classes = len(torch.unique(data[target_type].y))
     cprint(f"Number of classes: {num_classes}", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
 
     cprint(f"Number of new samples per class:", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
-    print_samples_count(new_nodes)
+    print_samples_count(new_nodes["train"])
     cprint(f"Number of old samples per class:", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
-    print_samples_count(old_nodes)
+    print_samples_count(old_nodes["train"])
 
     previous_output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot-1}")
     output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot}")
@@ -138,7 +137,6 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
             dropout=dropout,
             num_layers=num_layers
         ).to(device)
-        out_dict = model(data.x_dict, data.edge_index_dict)
 
         if idx_snapshot != 0 and strategy.needs_previous_model:
             cprint(f"Loading model from previous snapshot...", Color.EXPERIMENT_STATUS_LOW_PRIORITY)
@@ -150,8 +148,6 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
         #criterion = FocalLoss(num_classes=num_classes, gamma=focal_gamma, alpha=focal_alpha, reduction="mean")
         criterion = torch.nn.CrossEntropyLoss(compute_weights(data[target_type].y).float().to(device))
 
-        n_old = sum([len(old_nodes[val]) for val in old_nodes.keys()])
-        n_new = sum([len(new_nodes[val]) for val in new_nodes.keys()])
         t_max = n_epochs
         scheduler = None #torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=min_lr)
         if sampling_technique is not None:
@@ -162,8 +158,7 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
 
         model = train(model, data, new_nodes, old_nodes, optimizer, criterion, scheduler, run, strategy, directory=output_dir, reduction_factor=reduction_factor, n_epochs=n_epochs, kwargs=kwargs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
-
-        f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, run, directory=output_dir)
+        f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, new_nodes, old_nodes, run, directory=output_dir)
         elapsed_time = get_time_in_millis() - start_time
         cprint(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, roc-auc: {auc:.3f}, precision: {[{' '.join('{:.5f}'.format(x) for x in precision)}]}, recall: {[{' '.join('{:.5f}'.format(x) for x in recall)}]}, time: {elapsed_time}", Color.EXPERIMENT_OUTPUT)
 
