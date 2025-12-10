@@ -17,7 +17,7 @@ import torch_geometric.transforms as T
 from data_utils import save_dict_to_pickle
 from utils import get_device
 
-from src.data.data_utils import get_base_dir
+from src.support.utils_data import get_base_dir
 
 #import emoji
 

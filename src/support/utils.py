@@ -70,6 +70,7 @@ def get_metapaths(dataset_name):
 
     else:
         raise Exception("no metapaths defined for this dataset! Cretina!")
+
     return metapaths
 
 
@@ -133,6 +134,7 @@ def processing_results(df):
         stringa = "{:0.4f}".format(media) + u"\u00B1" + "{:0.4f}".format(st_dev)
         lista.append(stringa)
         res[col] = lista
+
     return res
 
 def cprint(text, color=Color.BLACK):
@@ -198,42 +200,3 @@ def merge_masks(masks):
 def print_samples_count(nodes_dict):
     for node_type in nodes_dict:
         cprint(f"- Class {node_type}: {len(nodes_dict[node_type])} samples", Color.EXPERIMENT_CONFIG_INFO)
-
-
-def plot(X, labels, probabilities=None, parameters=None, ground_truth=False, ax=None):
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    if ax is None:
-        _, ax = plt.subplots(figsize=(10, 4))
-    labels = labels if labels is not None else np.ones(X.shape[0])
-    probabilities = probabilities if probabilities is not None else np.ones(X.shape[0])
-    # Black removed and is used for noise instead.
-    unique_labels = set(labels)
-    colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
-    # The probability of a point belonging to its labeled cluster determines
-    # the size of its marker
-    proba_map = {idx: probabilities[idx] for idx in range(len(labels))}
-    for k, col in zip(unique_labels, colors):
-        if k == -1:
-            # Black used for noise.
-            col = [0, 0, 0, 1]
-
-        class_index = (labels == k).nonzero()[0]
-        for ci in class_index:
-            ax.plot(
-                X[ci, 0],
-                X[ci, 1],
-                "x" if k == -1 else "o",
-                markerfacecolor=tuple(col),
-                markeredgecolor="k",
-                markersize=4 if k == -1 else 1 + 5 * proba_map[ci],
-            )
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-    preamble = "True" if ground_truth else "Estimated"
-    title = f"{preamble} number of clusters: {n_clusters_}"
-    if parameters is not None:
-        parameters_str = ", ".join(f"{k}={v}" for k, v in parameters.items())
-        title += f" | {parameters_str}"
-    ax.set_title(title)
-    plt.tight_layout()

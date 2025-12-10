@@ -10,9 +10,8 @@ import torch_geometric.transforms as T
 from torch_geometric.data import HeteroData
 from torch_geometric.transforms import AddMetaPaths
 
-from src.data.data_utils import open_pickle, get_target_type, extract_edge_info
-from src.support.utils import get_base_dir
-from support.utils import get_metapaths
+from support.utils_data import open_pickle, get_target_type, extract_edge_info
+from support.utils import get_base_dir, get_metapaths
 
 
 def build_heterodata(dataset_name, no_snapshot):

@@ -394,7 +394,6 @@ def one_hot_encoding_list(df, col, values):
     return df
 
 
-
 def create_nodes_dict_full(data):
     res = {}
     for node_type in data.x_dict:

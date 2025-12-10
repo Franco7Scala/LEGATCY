@@ -1,4 +1,4 @@
-from src.data.data_utils import create_nodes_dict_empty
+from src.support.utils_data import create_nodes_dict_empty
 from src.sampling_strategies.other_full_retraining import FullRetraining
 
 

@@ -3,13 +3,11 @@ import torch
 import torch_geometric.explain
 from torch_geometric.nn import to_hetero
 
-from data.data_utils import create_nodes_dict_empty
 from sampling_strategies.abstract_strategy import AbstractStrategy
 from sampling_strategies.basic_ers2 import BasicERS2
 from support.utils import get_metapaths, get_device
-from support.utils_graph import extract_edges
-
-from src.support.utils_graph import k_hop_subgraph
+from support.utils_graph import extract_edges, k_hop_subgraph
+from support.utils_data import create_nodes_dict_empty
 
 
 class DyHANE(BasicERS2):
@@ -35,7 +33,7 @@ class DyHANE(BasicERS2):
                 old_data = k_hop_subgraph(data, old_nodes[target_type], 2)[0].to(data.device)
                 old_nodes_typed = self._select_old_nodes(kwargs.old_model, old_data)
             else:
-                old_nodes_typed = self._initialize_split_dict(data, dtype=torch.tensor)
+                old_nodes_typed = create_nodes_dict_empty(data, dtype=torch.tensor)
             # adding them to the mask
             for n_type in data.x_dict:
                 sampling_mask[n_type] = torch.cat(
@@ -175,7 +173,7 @@ class DyHANE(BasicERS2):
     #nota: sono i nodi più "significativi" del vecchio modello
     def _select_old_nodes(self, old_model, old_data): # buffer_size=768, topk=64
 
-        old_nodes = self._initialize_split_dict(old_data, dtype=torch.tensor)
+        old_nodes = create_nodes_dict_empty(old_data, dtype=torch.tensor)
 
         target_type = old_data.target_type
         explanation = self._get_explainer(old_model, old_data, target_type)

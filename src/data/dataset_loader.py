@@ -5,10 +5,8 @@ import torch.nn as nn
 from torch_geometric.datasets import IMDB
 from torch_geometric.datasets.dblp import DBLP
 from torch_geometric.transforms import AddMetaPaths
-from src.data.data_utils import create_nodes_dict_empty
-from src.support.utils import get_base_dir
-from src.support.utils_graph import k_hop_subgraph
-from support.utils import get_metapaths
+from support.utils_graph import k_hop_subgraph
+from support.utils import get_metapaths, get_base_dir
 
 
 def load_dataset(dataset_name, metapaths_enabled, n_snapshot, times_fist_snapshot, k, device, percentage_test_set=0.2):

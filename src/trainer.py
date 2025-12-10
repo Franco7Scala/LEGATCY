@@ -5,7 +5,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from torch_geometric.utils.mask import mask_to_index
 from tqdm import tqdm
 from src.support.utils import compute_auc, merge_masks
-from src.support.utils_graph import k_hop_subgraph, extract_train_data
+from src.support.utils_graph import k_hop_subgraph
 
 
 def train(model, all_data, new_nodes, old_nodes, optimizer, criterion, scheduler, run, strategy, directory, reduction_factor, n_epochs=200, kwargs=None):
@@ -38,11 +38,4 @@ def evaluate(model, all_data, new_nodes, old_nodes, run, directory):
         auc = compute_auc(test_data[test_data.target_type].y.cpu().numpy(), pred_prob.cpu().detach().numpy())
         precision = precision_score(test_data[test_data.target_type].y.cpu(), pred.cpu(), average=None, zero_division=0)
         recall = recall_score(test_data[test_data.target_type].y.cpu(), pred.cpu(), average=None, zero_division=0)
-        """
-        # Save embeddings for validation set
-        val_embeddings = embeddings[data.target_type].cpu().numpy()
-        os.makedirs(directory, exist_ok=True)
-        np.save(os.path.join(directory, f"embeddings_{run}.npy"), val_embeddings)
-        """
         return f1_micro, f1_macro, auc, precision, recall
-

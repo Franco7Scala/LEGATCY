@@ -6,50 +6,48 @@ import warnings
 
 from torch_geometric.nn import to_hetero
 from torch_geometric.explain import Explainer, CaptumExplainer
-from src.data.dataset_loader import load_dataset
-from src.models.HeteroGAT import HeteroGAT
-from src.sampling_strategies.voting_strategy import VotingStrategy
-from src.sampling_strategies.other_dyhane import DyHANE
-from src.sampling_strategies.other_full_retraining import FullRetraining
-from src.sampling_strategies.other_online_training import OnlineTraining
-from src.sampling_strategies.active_ers2 import ActiveERS2
-from src.al_techniques.random_al_technique import RandomALTechnique
-from src.al_techniques.margin_al_technique import MarginALTechnique
-from src.al_techniques.lcs_al_technique import LCSALTechnique
-from src.al_techniques.entropy_al_technique import EntropyALTechnique
-from src.support import utils
-from src.support.focal_loss import FocalLoss
-from src.support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, count_n_snapshots, get_base_dir, get_time_in_millis, get_class_distribution, Kwargs, compute_weights, merge_masks, print_samples_count
-from src.data.data_utils import create_nodes_dict_empty
-from src.support.utils_graph import extract_evaluation_data
-from src.trainer import train, evaluate
+from data.dataset_loader import load_dataset
+from models.HeteroGAT import HeteroGAT
+from sampling_strategies.voting_strategy import VotingStrategy
+from sampling_strategies.other_dyhane import DyHANE
+from sampling_strategies.other_full_retraining import FullRetraining
+from sampling_strategies.other_online_training import OnlineTraining
+from sampling_strategies.active_ers2 import ActiveERS2
+from al_techniques.random_al_technique import RandomALTechnique
+from al_techniques.margin_al_technique import MarginALTechnique
+from al_techniques.lcs_al_technique import LCSALTechnique
+from al_techniques.entropy_al_technique import EntropyALTechnique
+from support import utils
+from support.arguments import parse_arguments
+from support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, get_base_dir, get_time_in_millis, Kwargs, compute_weights, print_samples_count
+from support.utils_data import create_nodes_dict_empty
+from trainer import train, evaluate
 
 
-# TODO fare script per avviare tutti gli esperimenti in automitico (in una cartella specifica)
-# TODO fare controllo del codice per vedere se funge tutto come dovrebbe
-
+args = parse_arguments()
 
 # experiment setting parameters
-debug = True
-dataset_name = "imdb"
-n_snapshot = 4
-times_fist_snapshot = 3
-metapaths_enabled = False
-subgraph_hops = 2
-training_strategy = ActiveERS2         # DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy
-sampling_technique = RandomALTechnique                   # used only with ActiveERS2, RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique
-k = 500                                    # used only with ActiveERS2 and VotingStrategy, it identifies the amount of data to keep from the old nodes
-reduction_factor = 0.5                      # it identifies how many splits to create during the training between [0, 1] higher means less splits
+debug = args.debug
+dataset_name = args.dataset_name
+n_snapshot = args.n_snapshot
+times_fist_snapshot = args.times_first_snapshot
+metapaths_enabled = args.metapaths_enabled
+subgraph_hops = args.subgraph_hops
+training_strategy = getattr(sys.modules[__name__], args.training_strategy)
+sampling_technique = getattr(sys.modules[__name__], args.sampling_technique)
+k = args.k
+reduction_factor = args.reduction_factor
+results_dir = args.result_directory
 
 # training parameters
-n_epochs = 200
-max_lr = 0.01
-min_lr = 0.001
+n_epochs = args.n_epochs
+max_lr = args.max_lr
+min_lr = args.min_lr
 
 # model parameters
-num_layers = 3
-hidden_channels = 64
-dropout = 0.3
+num_layers = args.num_layers
+hidden_channels = args.hidden_channels
+dropout = args.dropout
 
 
 ############################################################################################
@@ -58,17 +56,18 @@ dropout = 0.3
 kwargs = Kwargs()
 warnings.filterwarnings("ignore")
 device = utils.get_device()
-root_dir = os.path.join(get_base_dir(), dataset_name, "results_debug" if debug else "results", str(get_time_in_millis()))
+if results_dir is None:
+    root_dir = os.path.join(get_base_dir(), dataset_name, "results_debug" if debug else "results", str(get_time_in_millis()))
+
+else:
+    root_dir = results_dir
+
 os.makedirs(root_dir, exist_ok=True)
 cprint(f"Saving results in '{root_dir}'", Color.EXPERIMENT_CONFIG_INFO)
 
-std_out = sys.stdout
 if debug:
     n_epochs = 1
     training_seeds = training_seeds[:2]
-
-else:
-    sys.stdout = open(os.path.join(root_dir, "log_file.log"), "w")
 
 cprint(f"Experiment config:\n"
        f"- Dataset: {dataset_name}\n"
@@ -92,7 +91,12 @@ data = data.to(device)
 
 for idx_snapshot, snapshot in enumerate(snapshot_masks):
     cprint(f"Working on snapshot n.{idx_snapshot + 1}...", Color.EXPERIMENT_CONFIG_INFO)
-    subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{idx_snapshot}")
+    if results_dir is None:
+        subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{idx_snapshot}")
+
+    else:
+        subgraphs_dir = os.path.join(root_dir, "subgraphs", f"snapshot_{idx_snapshot}")
+
     os.makedirs(subgraphs_dir, exist_ok=True)
     kwargs.subgraphs_dir = subgraphs_dir
 
@@ -178,7 +182,4 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     processing_results(data_frame).to_excel(os.path.join(output_dir, "results.xlsx"), index=False)
     cprint(f"Completed snapshot n.{idx_snapshot + 1}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
 
-cprint(f"Completed!", Color.OTHER)
-
-sys.stdout = std_out
 cprint(f"Completed!", Color.OTHER)

@@ -3,7 +3,7 @@ import torch
 import pickle
 from collections import Counter
 
-from src.data.data_utils import open_pickle
+from src.support.utils_data import open_pickle
 from src.support.utils import get_base_dir
 
 
