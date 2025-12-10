@@ -2,7 +2,7 @@
 gpus=(0 1 2 3 4 5 6)
 
 # experiment setting parameters
-debug="True"
+debug="False"
 dataset_name="imdb"
 n_snapshot=4
 times_fist_snapshot=3
