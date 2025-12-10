@@ -200,3 +200,14 @@ def merge_masks(masks):
 def print_samples_count(nodes_dict):
     for node_type in nodes_dict:
         cprint(f"- Class {node_type}: {len(nodes_dict[node_type])} samples", Color.EXPERIMENT_CONFIG_INFO)
+
+def str2bool(val):
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return True
+
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return False
+
+    else:
+        raise ValueError(f"invalid truth value {val}")

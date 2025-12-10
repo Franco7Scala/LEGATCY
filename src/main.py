@@ -19,7 +19,7 @@ from al_techniques.lcs_al_technique import LCSALTechnique
 from al_techniques.entropy_al_technique import EntropyALTechnique
 from support import utils
 from support.arguments import parse_arguments
-from support.utils import set_random_seed, training_seeds, processing_results, cprint, Color, get_base_dir, get_time_in_millis, Kwargs, compute_weights, print_samples_count
+from support.utils import str2bool, set_random_seed, training_seeds, processing_results, cprint, Color, get_base_dir, get_time_in_millis, Kwargs, compute_weights, print_samples_count
 from support.utils_data import create_nodes_dict_empty
 from trainer import train, evaluate
 
@@ -27,11 +27,11 @@ from trainer import train, evaluate
 args = parse_arguments()
 
 # experiment setting parameters
-debug = args.debug
+debug = str2bool(args.debug)
 dataset_name = args.dataset_name
 n_snapshot = args.n_snapshot
 times_fist_snapshot = args.times_first_snapshot
-metapaths_enabled = args.metapaths_enabled
+metapaths_enabled = str2bool(args.metapaths_enabled)
 subgraph_hops = args.subgraph_hops
 training_strategy = getattr(sys.modules[__name__], args.training_strategy)
 sampling_technique = getattr(sys.modules[__name__], args.sampling_technique)

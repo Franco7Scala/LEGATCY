@@ -2,7 +2,7 @@
 gpus=(0 1 2 3 4 5 6)
 
 # experiment setting parameters
-debug="False"
+debug="off"
 dataset_name="imdb"
 n_snapshot=4
 times_fist_snapshot=3
@@ -10,7 +10,7 @@ metapaths_enabled="False"
 subgraph_hops=2
 training_strategies=(DyHANE ActiveERS2 FullRetraining OnlineTraining VotingStrategy)
 sampling_techniques=(RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique)
-k=500
+k=200
 reduction_factor=0.5
 
 # training parameters
