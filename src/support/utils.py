@@ -73,10 +73,10 @@ def get_metapaths(dataset_name):
     elif dataset_name.lower() == "aminer":
         metapaths = [[('author', 'writes', 'paper'),
                       ('paper', 'written_by', 'author')],  # APA
-                     [('author', 'to', 'paper'),
+                     [('author', 'writes', 'paper'),
                       ('paper', 'published_in', 'venue'),
                       ('venue', 'publishes', 'paper'),
-                      ('paper', 'to', 'author')]]  # APVPA
+                      ('paper', 'written_by', 'author')]]  # APVPA
 
     elif dataset_name.lower() == "politifact":
         metapaths = [
