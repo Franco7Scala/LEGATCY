@@ -11,6 +11,8 @@ from enum import Enum
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_auc_score
 from deprecated import deprecated
+from torch_geometric.data import HeteroData
+import torch_geometric.transforms as T
 from torch_geometric.nn import to_hetero
 
 
@@ -36,8 +38,8 @@ def get_device():
 
 
 def get_base_dir():
-    #return '/home/martirano/data'
-    return '/home/scala/projects/GNN_ContinualLearning/data'
+    return '/home/martirano/data'
+    #return '/home/scala/projects/GNN_ContinualLearning/data'
 
 
 def get_metapaths(dataset_name):
@@ -68,6 +70,48 @@ def get_metapaths(dataset_name):
                       ('term', 'to', 'paper'),
                       ('paper', 'to', 'author')]] #APTPA
 
+    elif dataset_name.lower() == "aminer":
+        metapaths = [[('author', 'writes', 'paper'),
+                      ('paper', 'written_by', 'author')],  # APA
+                     [('author', 'to', 'paper'),
+                      ('paper', 'published_in', 'venue'),
+                      ('venue', 'publishes', 'paper'),
+                      ('paper', 'to', 'author')]]  # APVPA
+
+    elif dataset_name.lower() == "politifact":
+        metapaths = [
+            [('news', 'is_discussed_by', 'tweet'),
+             ('tweet', 'is_posted_by', 'user'),
+             ('user', 'posted', 'tweet'),
+             ('tweet', 'discusses', 'news')],  # NTUTN
+            [('news', 'is_discussed_by', 'tweet'),
+             ('tweet', 'has_hashtag', 'hashtag'),
+             ('hashtag', 'is_hashtag_of', 'tweet'),
+             ('tweet', 'discusses', 'news')],  # NTHTN
+            [('news', 'is_discussed_by', 'tweet'),
+             ('tweet', 'is_posted_by', 'user'),
+             ('user', 'mentions', 'user'),
+             ('user', 'posted', 'tweet'),
+             ('tweet', 'discusses', 'news')]]  # NTUUTN
+
+    elif dataset_name.lower() == "mumin":
+        metapaths = [[('claim', 'is_discussed_by', 'tweet'),
+                     ('tweet', 'is_posted_by', 'user'),
+                     ('user', 'posted', 'tweet'),
+                     ('tweet', 'discusses', 'claim')],  # CTUTC
+                    [('claim', 'is_discussed_by', 'tweet'),
+                     ('tweet', 'has_hashtag', 'hashtag'),
+                     ('hashtag', 'is_hashtag_of', 'tweet'),
+                     ('tweet', 'discusses', 'claim')],  # CTHTC
+                    [('claim', 'is_discussed_by', 'tweet'),
+                     ('tweet', 'is_replied_by', 'reply'),
+                     ('reply', 'reply_to', 'tweet'),
+                     ('tweet', 'discusses', 'claim')],  # CTRTC_r
+                    [('claim', 'is_discussed_by', 'tweet'),
+                     ('tweet', 'is_quoted_by', 'reply'),
+                     ('reply', 'quote_of', 'tweet'),
+                     ('tweet', 'discusses', 'claim')]]  # CTRTC_q
+
     else:
         raise Exception("no metapaths defined for this dataset! Cretina!")
 
@@ -76,6 +120,47 @@ def get_metapaths(dataset_name):
 
 def count_n_snapshots(dataset_name):
     return len([f.path for f in os.scandir(f"{get_base_dir()}/{dataset_name}") if f.is_dir() and "snapshot_" in f.name])
+
+
+def build_heterodata(dataset_name, target_type):
+    data = HeteroData()
+    heterodata_dir = os.path.join(get_base_dir(), dataset_name, "heterodata")
+    feats_dir = os.path.join(heterodata_dir, "features")
+    edges_dir = os.path.join(heterodata_dir, "edgelists")
+
+    # nodes
+    files_feats = [f for f in os.listdir(feats_dir) if os.path.isfile(os.path.join(feats_dir, f))]
+    for fname in files_feats:
+        n_type = fname[:-3]  # remove the last 4 characters (".pt")
+        data[n_type].x = torch.load(os.path.join(feats_dir, fname))
+
+    # ground truth for target_type
+    data[target_type].y = torch.load(os.path.join(heterodata_dir, f'{target_type}_labels.pt'))
+
+    # edges
+    files_edges = [f for f in os.listdir(edges_dir) if os.path.isfile(os.path.join(edges_dir, f))]
+    for fname in files_edges:
+        n_type_src, n_type_tgt, e_type = _extract_edge_info(fname)
+        edge_index = torch.load(os.path.join(heterodata_dir, "edgelists", fname))
+        if edge_index.dtype == torch.float64:
+            edge_index = edge_index.to(torch.int64)
+        data[n_type_src, e_type, n_type_tgt].edge_index = edge_index
+
+    transform = T.RandomNodeSplit(num_val=0, num_test=0.30)  # train-val-test split: 70-0-30
+    data = transform(data)
+
+    return data
+
+def _extract_edge_info(fname):
+    #fname_base = fname[:-3]  # remove the last 3 characters (".pt") #if .csv?
+    last_dot = fname.rfind(".")
+    fname_base = fname[:last_dot]
+    first_underscore = fname_base.find("_")  # first occurrence
+    last_underscore = fname_base.rfind("_")  # last occurrence
+    n_type_src = fname_base[:first_underscore]
+    e_type = fname_base[first_underscore + 1:last_underscore]
+    n_type_tgt = fname_base[last_underscore + 1:]
+    return n_type_src, n_type_tgt, e_type
 
 
 def to_categorical(data, n_classes):
