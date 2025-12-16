@@ -3,18 +3,18 @@ import argparse
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Parse arguments for experiments.")
-    parser.add_argument("--debug", default=False, help="Enable debug mode.")
+    parser.add_argument("--debug", default="True", help="Enable debug mode.")
     parser.add_argument("--dataset-name", type=str, default="imdb", help="Name of the dataset to be used.")
     parser.add_argument("--result-directory", type=str, default=None, help="Name of the directory for the results.")
     parser.add_argument("--n-snapshot", type=int, default=4, help="Number of snapshots.")
     parser.add_argument("--times-first-snapshot", dest="times_first_snapshot", type=int, default=3, help="Multiplier for the first snapshot.")
-    parser.add_argument("--metapaths-enabled", dest="metapaths_enabled", default=False, help="Enable metapaths.")
+    parser.add_argument("--metapaths-enabled", dest="metapaths_enabled", default="False", help="Enable metapaths.")
     parser.add_argument("--subgraph-hops", type=int, default=2, help="Number of hops for subgraph extraction.")
     parser.add_argument(
         "--training-strategy",
         type=str,
         choices=["DyHANE", "ActiveERS2", "FullRetraining", "OnlineTraining", "VotingStrategy"],
-        default="ActiveERS2",
+        default="FullRetraining",
         help="Training strategy name."
     )
     parser.add_argument(

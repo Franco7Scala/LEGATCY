@@ -104,7 +104,14 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     strategy = training_strategy()
     new_nodes = snapshot_masks[idx_snapshot]
     if idx_snapshot != 0:
-        old_nodes = snapshot_masks[idx_snapshot - 1]
+        if type(strategy) == FullRetraining:
+            old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
+            for mask in snapshot_masks[:idx_snapshot]:
+                for n_type in mask["train"]:
+                    old_nodes["train"][n_type] = torch.cat((old_nodes["train"][n_type], mask["train"][n_type]), dim=0)
+
+        else:
+            old_nodes = snapshot_masks[idx_snapshot - 1]
 
     else:
         old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
