@@ -21,10 +21,10 @@ def parse_arguments():
         "--sampling-technique",
         type=str,
         choices=["RandomALTechnique", "LCSALTechnique", "EntropyALTechnique", "MarginALTechnique", "None"],
-        default="LCSALTechnique",
+        default="None",
         help="Sampling technique name or 'None'."
     )
-    parser.add_argument("--k", type=int, default=500, help="Number of samples to select at each training stage (k).")
+    parser.add_argument("--k", type=int, default=-1, help="Number of samples to select at each training stage (k).")
     parser.add_argument("--reduction-factor", type=float, default=0.5, help="Reduction factor for sampling.")
     parser.add_argument("--n-epochs", type=int, default=200, help="Number of training epochs.")
     parser.add_argument("--max-lr", type=float, default=0.01, help="Maximum learning rate.")
@@ -32,4 +32,5 @@ def parse_arguments():
     parser.add_argument("--num-layers", type=int, default=3, help="Number of model layers.")
     parser.add_argument("--hidden-channels", type=int, default=64, help="Hidden channel size.")
     parser.add_argument("--dropout", type=float, default=0.3, help="Dropout probability.")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
     return parser.parse_args()

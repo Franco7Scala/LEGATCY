@@ -56,9 +56,9 @@ def load_dataset(dataset_name, metapaths_enabled, n_snapshot, times_fist_snapsho
     data.device = data.x_dict[data.target_type].device
     # determining snapshot masks
     size = data[target_type].x.shape[0]
-    seed_mask = torch.randperm(size)
-    # first snapshot
     n_samples_first_snapshot = int((size / (n_snapshot + times_fist_snapshot)) * times_fist_snapshot)
+    seed_mask = _fixed_randperm(size, n_samples_first_snapshot).to(device)
+    # first snapshot
     train_mask = seed_mask[0: int(n_samples_first_snapshot * (1 - percentage_test_set))]
     test_mask = seed_mask[int(n_samples_first_snapshot * (1 - percentage_test_set)): n_samples_first_snapshot]
     snapshot_masks.append({"train": k_hop_subgraph(data, train_mask, k)[1], "test": k_hop_subgraph(data, test_mask, k)[1]})
@@ -71,3 +71,9 @@ def load_dataset(dataset_name, metapaths_enabled, n_snapshot, times_fist_snapsho
         snapshot_masks.append({"train": k_hop_subgraph(data, train_mask, k)[1], "test": k_hop_subgraph(data, test_mask, k)[1]})
 
     return data, target_type, snapshot_masks
+
+
+def _fixed_randperm(n, k):
+    fixed = torch.arange(k)
+    suffix = torch.randperm(n - k) + k
+    return torch.cat([fixed, suffix])

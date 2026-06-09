@@ -34,7 +34,7 @@ times_fist_snapshot = args.times_first_snapshot
 metapaths_enabled = str2bool(args.metapaths_enabled)
 subgraph_hops = args.subgraph_hops
 training_strategy = getattr(sys.modules[__name__], args.training_strategy)
-sampling_technique = getattr(sys.modules[__name__], args.sampling_technique)
+sampling_technique = None if args.sampling_technique == "None" else getattr(sys.modules[__name__], args.sampling_technique)
 k = args.k
 reduction_factor = args.reduction_factor
 results_dir = args.result_directory
@@ -54,6 +54,8 @@ dropout = args.dropout
 
 
 kwargs = Kwargs()
+data_frame = None
+dynamic_k = (k == -1)
 warnings.filterwarnings("ignore")
 device = utils.get_device()
 if results_dir is None:
@@ -86,6 +88,7 @@ cprint(f"Experiment config:\n"
        f"- Device: {device}\n", Color.EXPERIMENT_CONFIG_INFO)
 
 cprint(f"Loading dataset...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+set_random_seed(args.seed)
 data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, metapaths_enabled=metapaths_enabled, n_snapshot=n_snapshot, times_fist_snapshot=times_fist_snapshot, k=subgraph_hops, device=device)
 data = data.to(device)
 
@@ -104,14 +107,15 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     strategy = training_strategy()
     new_nodes = snapshot_masks[idx_snapshot]
     if idx_snapshot != 0:
-        if type(strategy) == FullRetraining:
-            old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
-            for mask in snapshot_masks[:idx_snapshot]:
-                for n_type in mask["train"]:
-                    old_nodes["train"][n_type] = torch.cat((old_nodes["train"][n_type], mask["train"][n_type]), dim=0)
+        #TODO messo cosi perche con ogni tecnica possiamo vedere tutto il passato che poi puo essere o meno filtrato
+        #if type(strategy) == FullRetraining:
+        old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
+        for mask in snapshot_masks[:idx_snapshot]:
+            for n_type in mask["train"]:
+                old_nodes["train"][n_type] = torch.cat((old_nodes["train"][n_type], mask["train"][n_type]), dim=0)
 
-        else:
-            old_nodes = snapshot_masks[idx_snapshot - 1]
+        #else:
+            #old_nodes = snapshot_masks[idx_snapshot - 1]
 
     else:
         old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
@@ -128,12 +132,6 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     output_dir = os.path.join(root_dir, f"snapshot_{idx_snapshot}")
     os.makedirs(output_dir, exist_ok=True)
 
-    l_micro = []
-    l_macro = []
-    l_auc = []
-    l_times = []
-    l_precision = []
-    l_recall = []
     for run in range(len(training_seeds)):
         start_time = get_time_in_millis()
         cprint(f"Performing run n {run + 1} on {len(training_seeds)}...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
@@ -165,28 +163,43 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
             strategy.al_technique = sampling_technique(model)
 
         if k is not None:
-            strategy.k = k
+            if dynamic_k:
+                k = len(new_nodes["train"][target_type])
+
+            else:
+                strategy.k = k
 
         model = train(model, data, new_nodes, old_nodes, optimizer, criterion, scheduler, run, strategy, directory=output_dir, reduction_factor=reduction_factor, n_epochs=n_epochs, kwargs=kwargs)
         torch.save(model.state_dict(), os.path.join(output_dir, f"model_{run}.pth"))
         f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, new_nodes, old_nodes, run, directory=output_dir)
         elapsed_time = get_time_in_millis() - start_time
         cprint(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, roc-auc: {auc:.3f}, precision: {[{' '.join('{:.5f}'.format(x) for x in precision)}]}, recall: {[{' '.join('{:.5f}'.format(x) for x in recall)}]}, time: {elapsed_time}", Color.EXPERIMENT_OUTPUT)
+        new_data_frame = pandas.DataFrame([{"Seed": training_seeds[run],
+                                            "run": run + 1,
+                                            "Dataset": dataset_name,
+                                            "completed_snapshot": idx_snapshot + 1,
+                                            "n_snapshots": args.n_snapshot,
+                                            "times_first_snapshot": args.times_first_snapshot,
+                                            "metapaths_enabled": args.metapaths_enabled,
+                                            "reduction_factor": args.reduction_factor,
+                                            "k": args.k,
+                                            "training_strategy": args.training_strategy,
+                                            "sampling_technique": args.sampling_technique,
+                                            "F1_micro": f1_micro,
+                                            "F1_macro": f1_macro,
+                                            "Precision": precision,
+                                            "Recall": recall,
+                                            "ROC-AUC": auc,
+                                            "Time": elapsed_time}])
 
-        l_micro.append(f1_micro)
-        l_macro.append(f1_macro)
-        l_auc.append(auc)
-        l_precision.append(precision)
-        l_recall.append(recall)
-        l_times.append(elapsed_time)
+        if data_frame is None:
+            data_frame = new_data_frame
 
-    cprint(f"Saving results in '{output_dir}/results.xlsx'...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
-    data_frame = pandas.DataFrame(columns=["F1_micro", "F1_macro", "ROC-AUC", "time"])
-    data_frame["F1_micro"] = l_micro
-    data_frame["F1_macro"] = l_macro
-    data_frame["ROC-AUC"] = l_auc
-    data_frame["time"] = l_times
-    processing_results(data_frame).to_excel(os.path.join(output_dir, "results.xlsx"), index=False)
+        else:
+            data_frame = pandas.concat([data_frame, new_data_frame], ignore_index=True)
+
+    results_path = os.path.join(root_dir, f"{dataset_name}_results.tsv")
+    data_frame.to_csv(results_path, mode="a", header=not os.path.exists(results_path), sep="\t", decimal=",", index=False)
     cprint(f"Completed snapshot n.{idx_snapshot + 1}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
 
 cprint(f"Completed!", Color.OTHER)

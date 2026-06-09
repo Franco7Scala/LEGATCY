@@ -4,7 +4,7 @@ from torch_geometric.loader import HGTLoader
 from src.support.utils_data import create_nodes_dict_empty
 
 
-def k_hop_subgraph(data, seeds_mask, k):
+def k_hop_subgraph(data, seeds_mask, k, strict=True):
     subgraph_mask = create_nodes_dict_empty(data)
     for edge_type in data.edge_types:
         src_type, _, dst_type = edge_type
@@ -20,15 +20,21 @@ def k_hop_subgraph(data, seeds_mask, k):
 
     #TODO add meta paths for heterogeneous graphs
     subgraph_mask[data.target_type] = seeds_mask.tolist()
-    subgraph_mask = _merge_masks(subgraph_mask, _hop_traveling(data, subgraph_mask, k-1))
+    subgraph_mask = _merge_masks(subgraph_mask, _hop_traveling(data, subgraph_mask, strict, k-1))
     for ntype in subgraph_mask.keys():
-        subgraph_mask[ntype] = torch.tensor(subgraph_mask[ntype]).to(int).to(data.device)
+        subgraph_mask[ntype] = torch.unique(torch.tensor(subgraph_mask[ntype], device=data.device))
 
     subgraph_data = data.subgraph(subgraph_mask)
-    return subgraph_data, subgraph_mask
+    target_type_nodes_extended_indices = subgraph_mask[data.target_type]
+    new_seeds_mask = torch.where(torch.isin(target_type_nodes_extended_indices, seeds_mask))[0]
+    if not strict:
+        return subgraph_data, subgraph_mask, new_seeds_mask
+
+    else:
+        return subgraph_data, subgraph_mask
 
 
-def _hop_traveling(data, subgraph_mask, k):
+def _hop_traveling(data, subgraph_mask, strict, k):
     if k == 0:
         return subgraph_mask
 
@@ -38,17 +44,17 @@ def _hop_traveling(data, subgraph_mask, k):
         for node_type in subgraph_mask.keys():
             if node_type != data.target_type:
                 prevoius_hop_nodes = subgraph_mask[node_type]
-                if dst_type == node_type and src_type != data.target_type:
+                if dst_type == node_type and (src_type != data.target_type or not strict):
                     for idx, node in enumerate(data[edge_type]["edge_index"][1]):
                         if node.item() in prevoius_hop_nodes:
                             next_hop_subgraph_mask[src_type].append(data[edge_type]["edge_index"][0][idx].item())
 
-                if src_type == node_type and dst_type != data.target_type:
+                if src_type == node_type and (dst_type != data.target_type or not strict):
                     for idx, node in enumerate(data[edge_type]["edge_index"][0]):
                         if node.item() in prevoius_hop_nodes:
                             next_hop_subgraph_mask[dst_type].append(data[edge_type]["edge_index"][1][idx].item())
 
-    return _hop_traveling(data, next_hop_subgraph_mask, k-1)
+    return _hop_traveling(data, next_hop_subgraph_mask, strict, k-1)
 
 
 def _merge_masks(first_mask, second_mask):

@@ -38,8 +38,8 @@ def get_device():
 
 
 def get_base_dir():
-    return '/home/martirano/data'
-    #return '/home/scala/projects/GNN_ContinualLearning/data'
+    #return '/home/martirano/data'
+    return '/home/jovyan/projects/GNNContinualLearning/data'
 
 
 def get_metapaths(dataset_name):
@@ -272,7 +272,7 @@ def merge_masks(masks):
         return []
 
     if len(masks) == 1:
-        masks[0]
+        return masks[0]
 
     merged_mask = copy.deepcopy(masks[0])
     for mask in masks[1:]:
@@ -285,6 +285,7 @@ def merge_masks(masks):
 def print_samples_count(nodes_dict):
     for node_type in nodes_dict:
         cprint(f"- Class {node_type}: {len(nodes_dict[node_type])} samples", Color.EXPERIMENT_CONFIG_INFO)
+
 
 def str2bool(val):
     val = val.lower()

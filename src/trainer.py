@@ -27,15 +27,20 @@ def train(model, all_data, new_nodes, old_nodes, optimizer, criterion, scheduler
 
 
 def evaluate(model, all_data, new_nodes, old_nodes, run, directory):
-    test_data = k_hop_subgraph(all_data, merge_masks([new_nodes["test"], old_nodes["test"]])[all_data.target_type], 2)[0]
+    test_data, _, test_mask = k_hop_subgraph(all_data, merge_masks([new_nodes["test"], old_nodes["test"]])[all_data.target_type], 2, False)
     model.eval()
     with torch.no_grad():
-        out = model(test_data.x_dict, test_data.edge_index_dict)
-        pred = out[test_data.target_type].argmax(dim=-1)
-        pred_prob = torch.nn.functional.softmax(model(test_data.x_dict, test_data.edge_index_dict)[test_data.target_type], -1)
-        f1_micro = f1_score(test_data[test_data.target_type].y.cpu(), pred.cpu(), average="micro")
-        f1_macro = f1_score(test_data[test_data.target_type].y.cpu(), pred.cpu(), average="macro")
-        auc = compute_auc(test_data[test_data.target_type].y.cpu().numpy(), pred_prob.cpu().detach().numpy())
-        precision = precision_score(test_data[test_data.target_type].y.cpu(), pred.cpu(), average=None, zero_division=0)
-        recall = recall_score(test_data[test_data.target_type].y.cpu(), pred.cpu(), average=None, zero_division=0)
+        out_dict = model(test_data.x_dict, test_data.edge_index_dict)
+        out_target_test = out_dict[test_data.target_type][test_mask]
+        y_target_test = test_data[test_data.target_type].y[test_mask]
+        pred = out_target_test.argmax(dim=-1)
+        pred_prob = torch.nn.functional.softmax(out_target_test, dim=-1)
+        y_true_cpu = y_target_test.cpu().numpy()
+        pred_cpu = pred.cpu().numpy()
+        pred_prob_cpu = pred_prob.cpu().detach().numpy()
+        f1_micro = f1_score(y_true_cpu, pred_cpu, average="micro")
+        f1_macro = f1_score(y_true_cpu, pred_cpu, average="macro")
+        auc = compute_auc(y_true_cpu, pred_prob_cpu)
+        precision = precision_score(y_true_cpu, pred_cpu, average=None, zero_division=0)
+        recall = recall_score(y_true_cpu, pred_cpu, average=None, zero_division=0)
         return f1_micro, f1_macro, auc, precision, recall
