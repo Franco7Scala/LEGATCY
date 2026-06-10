@@ -54,7 +54,6 @@ dropout = args.dropout
 
 
 kwargs = Kwargs()
-data_frame = None
 dynamic_k = (k == -1)
 warnings.filterwarnings("ignore")
 device = utils.get_device()
@@ -133,6 +132,7 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     os.makedirs(output_dir, exist_ok=True)
 
     for run in range(len(training_seeds)):
+        data_frame = None
         start_time = get_time_in_millis()
         cprint(f"Performing run n {run + 1} on {len(training_seeds)}...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         set_random_seed(training_seeds[run])

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PYTHONPATH=$PYTHONPATH:/projects/InfluentialNodes
+export PYTHONPATH=$PYTHONPATH:/projects/GNNContinualLearning
 
 
 # experiment setting parameters
