@@ -132,7 +132,6 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     os.makedirs(output_dir, exist_ok=True)
 
     for run in range(len(training_seeds)):
-        data_frame = None
         start_time = get_time_in_millis()
         cprint(f"Performing run n {run + 1} on {len(training_seeds)}...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         set_random_seed(training_seeds[run])
@@ -174,7 +173,7 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
         f1_micro, f1_macro, auc, precision, recall = evaluate(model, data, new_nodes, old_nodes, run, directory=output_dir)
         elapsed_time = get_time_in_millis() - start_time
         cprint(f"f1-micro: {f1_micro:.3f}, f1-macro: {f1_macro:.3f}, roc-auc: {auc:.3f}, precision: {[{' '.join('{:.5f}'.format(x) for x in precision)}]}, recall: {[{' '.join('{:.5f}'.format(x) for x in recall)}]}, time: {elapsed_time}", Color.EXPERIMENT_OUTPUT)
-        new_data_frame = pandas.DataFrame([{"Seed": training_seeds[run],
+        data_frame = pandas.DataFrame([{"Seed": training_seeds[run],
                                             "run": run + 1,
                                             "Dataset": dataset_name,
                                             "completed_snapshot": idx_snapshot + 1,
@@ -192,14 +191,8 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
                                             "ROC-AUC": auc,
                                             "Time": elapsed_time}])
 
-        if data_frame is None:
-            data_frame = new_data_frame
-
-        else:
-            data_frame = pandas.concat([data_frame, new_data_frame], ignore_index=True)
-
-    results_path = os.path.join(root_dir, f"{dataset_name}_results.tsv")
-    data_frame.to_csv(results_path, mode="a", header=not os.path.exists(results_path), sep="\t", decimal=",", index=False)
-    cprint(f"Completed snapshot n.{idx_snapshot + 1}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
+        results_path = os.path.join(root_dir, f"{dataset_name}_results.tsv")
+        data_frame.to_csv(results_path, mode="a", header=not os.path.exists(results_path), sep="\t", decimal=",", index=False)
+        cprint(f"Completed snapshot n.{idx_snapshot + 1}!", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
 
 cprint(f"Completed!", Color.OTHER)
