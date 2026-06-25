@@ -92,9 +92,6 @@ data, target_type, snapshot_masks = load_dataset(dataset_name=dataset_name, meta
 data = data.to(device)
 
 for idx_snapshot, snapshot in enumerate(snapshot_masks):
-    if idx_snapshot == 0:
-        continue
-
     cprint(f"Working on snapshot n.{idx_snapshot + 1}...", Color.EXPERIMENT_CONFIG_INFO)
     if results_dir is None:
         subgraphs_dir = os.path.join(get_base_dir(), dataset_name, "subgraphs", f"snapshot_{idx_snapshot}")
