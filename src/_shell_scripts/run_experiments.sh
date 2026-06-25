@@ -11,9 +11,9 @@ times_fist_snapshot=3
 metapaths_enabled="False"
 #training_strategies=(ActiveERS2 OnlineTraining)
 #sampling_techniques=(RandomALTechnique LCSALTechnique)
-training_strategies=(ActiveERS2 VotingStrategy DyHANE FullRetraining OnlineTraining)
-sampling_techniques=(RandomALTechnique LCSALTechnique EntropyALTechnique MarginALTechnique)
-k=50 # set to -1 k is equal to new nodes in each snapshot
+training_strategies=(ActiveERS2 FullRetraining OnlineTraining VotingStrategy)
+sampling_techniques=(RandomALTechnique LCSALTechnique)
+k=200 # set to -1 k is equal to new nodes in each snapshot
 reduction_factor=0.5
 
 

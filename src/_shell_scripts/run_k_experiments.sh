@@ -5,13 +5,13 @@ export PYTHONPATH=$PYTHONPATH:/projects/GNNContinualLearning
 
 # experiment setting parameters
 debug="off"
-dataset_name="dblp"
+dataset_name="imdb"
 n_snapshot=4
 times_fist_snapshot=3
 metapaths_enabled="False"
-training_strategies=(ActiveERS2 VotingStrategy DyHANE)
-sampling_techniques=(RandomALTechnique LCSALTechnique)
-k_values=(25 100 150)
+training_strategies=(ActiveERS2)
+sampling_techniques=(LCSALTechnique RandomALTechnique)
+k_values=(200) # dopo avviare RandomALTechnique LCSALTechnique con 100
 reduction_factor=0.5
 
 
