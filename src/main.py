@@ -4,14 +4,9 @@ import pandas
 import torch
 import warnings
 
-from torch_geometric.nn import to_hetero
-from torch_geometric.explain import Explainer, CaptumExplainer
 from data.dataset_loader import load_dataset
 from models.HeteroGAT import HeteroGAT
 from sampling_strategies.voting_strategy import VotingStrategy
-from sampling_strategies.other_dyhane import DyHANE
-from sampling_strategies.other_full_retraining import FullRetraining
-from sampling_strategies.other_online_training import OnlineTraining
 from sampling_strategies.active_ers2 import ActiveERS2
 from al_techniques.random_al_technique import RandomALTechnique
 from al_techniques.margin_al_technique import MarginALTechnique
@@ -19,7 +14,7 @@ from al_techniques.lcs_al_technique import LCSALTechnique
 from al_techniques.entropy_al_technique import EntropyALTechnique
 from support import utils
 from support.arguments import parse_arguments
-from support.utils import str2bool, set_random_seed, training_seeds, processing_results, cprint, Color, get_base_dir, get_time_in_millis, Kwargs, compute_weights, print_samples_count
+from support.utils import str2bool, set_random_seed, training_seeds, cprint, Color, get_base_dir, get_time_in_millis, Kwargs, compute_weights, print_samples_count
 from support.utils_data import create_nodes_dict_empty
 from trainer import train, evaluate
 
@@ -106,15 +101,10 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
     strategy = training_strategy()
     new_nodes = snapshot_masks[idx_snapshot]
     if idx_snapshot != 0:
-        #TODO messo cosi perche con ogni tecnica possiamo vedere tutto il passato che poi puo essere o meno filtrato
-        #if type(strategy) == FullRetraining:
         old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
         for mask in snapshot_masks[:idx_snapshot]:
             for n_type in mask["train"]:
                 old_nodes["train"][n_type] = torch.cat((old_nodes["train"][n_type], mask["train"][n_type]), dim=0)
-
-        #else:
-            #old_nodes = snapshot_masks[idx_snapshot - 1]
 
     else:
         old_nodes = {"test": create_nodes_dict_empty(data, dtype=torch.tensor), "train": create_nodes_dict_empty(data, dtype=torch.tensor)}
@@ -153,7 +143,6 @@ for idx_snapshot, snapshot in enumerate(snapshot_masks):
 
         cprint(f"Training model...", Color.EXPERIMENT_STATUS_HIGH_PRIORITY)
         optimizer = torch.optim.Adam(model.parameters(), lr=max_lr, weight_decay=0.001)
-        #criterion = FocalLoss(num_classes=num_classes, gamma=focal_gamma, alpha=focal_alpha, reduction="mean")
         criterion = torch.nn.CrossEntropyLoss(compute_weights(data[target_type].y).float().to(device))
 
         t_max = n_epochs
