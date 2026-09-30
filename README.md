@@ -1,5 +1,6 @@
 # Preserving Knowledge Legacy: Continual Learning on Heterogeneous Graph Attention Networks
 
+[![Paper](https://img.shields.io/badge/Paper-Discovery_Science-brightgreen.svg)](TODO)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository contains the code and resources for the **LEGATCY** framework presented in the research paper "Preserving Knowledge Legacy: Continual Learning on Heterogeneous Graph Attention Networks". Our proposal addresses the challenge of catastrophic forgetting in evolving Heterogeneous Information Networks (HINs) by introducing a continual learning framework based on selective experience replay. LEGATCY incrementally updates a heterogeneous Graph Attention Network while retaining a compact memory of informative historical nodes to preserve structural patterns and semantic representations.
