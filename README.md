@@ -1,6 +1,6 @@
 # Preserving Knowledge Legacy: Continual Learning on Heterogeneous Graph Attention Networks
 
-[![Paper](https://img.shields.io/badge/Paper-Discovery_Science-brightgreen.svg)](TODO)
+[![Paper](https://img.shields.io/badge/Paper-Discovery_Science-brightgreen.svg)](https://doi.org/10.1007/978-3-032-41086-3_39)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository contains the code and resources for the **LEGATCY** framework presented in the research paper "Preserving Knowledge Legacy: Continual Learning on Heterogeneous Graph Attention Networks". Our proposal addresses the challenge of catastrophic forgetting in evolving Heterogeneous Information Networks (HINs) by introducing a continual learning framework based on selective experience replay. LEGATCY incrementally updates a heterogeneous Graph Attention Network while retaining a compact memory of informative historical nodes to preserve structural patterns and semantic representations.
@@ -35,5 +35,21 @@ To run the code, ensure you have the libraries specified in `requirements.txt` i
 ## Citation
 
 ```bibtex
-Coming soon...
+@InProceedings{10.1007/978-3-032-41086-3_39,
+    author="Scala, Francesco
+    and Martirano, Liliana
+    and Comito, Carmela
+    and Flesca, Sergio
+    and Pontieri, Luigi",
+    editor="Cerrato, Mattia
+    and van Rijn, Jan N.
+    and Kramer, Stefan",
+    title="Preserving Knowledge Legacy: Continual Learning on Heterogeneous Graph Attention Networks",
+    booktitle="Discovery Science",
+    year="2027",
+    publisher="Springer Nature Switzerland",
+    address="Cham",
+    pages="604--619",
+    isbn="978-3-032-41086-3"
+}
 ```
